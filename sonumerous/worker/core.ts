@@ -59,8 +59,13 @@ export async function ownAsset(env: AppEnv, userId: string, assetId: string, all
 /** Default image model for template and refine generations. */
 export const DEFAULT_IMAGE_MODEL = 'openai/gpt-image-2.5-sunburst';
 
-/** Parent facial reference: use full original up to this size, else the 1024px reference.webp variant. */
-export const PARENT_REFERENCE_MAX_BYTES = 12 * 1024 * 1024;
+/** Cheap models for small theme-cover tiles (in preference order). */
+export const COVER_IMAGE_MODELS = [
+  'google/gemini-3.1-flash-lite-image',
+  'google/gemini-3.1-flash-image',
+];
+
+/** Reference payload for OpenRouter: prefer the reference variant, fall back to the original bytes. */
 
 export const UPLOAD_COMPRESS_MAX_BYTES = 4 * 1024 * 1024;
 export const UPLOAD_COMPRESS_MAX_EDGE = 2048;
@@ -125,16 +130,11 @@ export async function referenceObject(env: AppEnv, objectKey: string) {
   return { object: original, mime: safeMime };
 }
 
-/** Subject parent reference: full original when within size cap, otherwise the downscaled reference variant. */
+/** Subject parent reference: always the downscaled 1024px reference variant when
+ * present (full originals only inflate billed input megapixels and upload time;
+ * likeness comes from the model, not from extra pixels). Falls back to the
+ * original when no variant was built yet. */
 export async function parentReferenceObject(env: AppEnv, asset: AssetRow) {
-  if (asset.bytes <= PARENT_REFERENCE_MAX_BYTES) {
-    const original = await env.MEDIA.get(asset.object_key);
-    if (original) {
-      const mime = original.httpMetadata?.contentType;
-      const safeMime = mime && ['image/png', 'image/jpeg', 'image/webp', 'image/avif'].includes(mime) ? mime : asset.mime;
-      return { object: original, mime: safeMime };
-    }
-  }
   return referenceObject(env, asset.object_key);
 }
 
@@ -157,6 +157,7 @@ export async function makeVariants(env: AppEnv, objectKey: string) {
 const allowedModels: Record<string, [string, string]> = {
   'openai/gpt-image-2.5-sunburst': ['GPT Image 2.5 Sunburst', 'Precision portraits and strong face adherence'],
   'google/gemini-3.1-flash-image': ['Nano Banana 2', 'A versatile starting point'],
+  'google/gemini-3.1-flash-lite-image': ['Nano Banana 2 Lite', 'Fast, low-cost drafts'],
   'google/gemini-3-pro-image': ['Nano Banana Pro', 'For considered details'],
   'openai/gpt-image-2.5-flare': ['GPT Image 2.5 Flare', 'OpenAI image generation'],
 };

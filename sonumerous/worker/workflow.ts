@@ -64,7 +64,7 @@ export class GenerationWorkflow extends WorkflowEntrypoint<AppEnv, GenerationPar
           input_references: references,
           provider: { only: [endpoint.provider_tag], allow_fallbacks: false },
         };
-        if (input.model === DEFAULT_IMAGE_MODEL) requestBody.quality = 'high';
+        if (input.model === DEFAULT_IMAGE_MODEL) requestBody.quality = 'medium';
         // Try the primary key first; on key/credit/rate-limit rejections fall
         // back to the backup key once. A rejected attempt produces no image
         // (and no charge), so retrying with the other key is safe. Only the
@@ -93,7 +93,9 @@ export class GenerationWorkflow extends WorkflowEntrypoint<AppEnv, GenerationPar
       const assetMeta = await step.do('save-original', async () => {
         await this.env.DB.prepare("UPDATE generations SET status='saving',updated_at=? WHERE id=?").bind(now(),generationId).run();
         const saved = await this.env.MEDIA.get(rawKey); if (!saved) throw new Error('The image response could not be recovered.');
-        const data = await saved.json<{data?:{b64_json?:string;media_type?:string}[]}>();
+        const data = await saved.json<{data?:{b64_json?:string;media_type?:string}[]; usage?: { cost?: number }}>();
+        const usageCost = data.usage && typeof data.usage.cost === 'number' ? data.usage.cost : null;
+        if (usageCost !== null) console.log(JSON.stringify({ event: 'openrouter_images_cost', generationId, model: generation.model, cost: usageCost }));
         const output = data.data?.[0];
         if (!output?.b64_json || output.b64_json.length > 20*1024*1024) throw new Error('The model returned no supported image. Try again with a different model.');
         const binary = atob(output.b64_json); const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));

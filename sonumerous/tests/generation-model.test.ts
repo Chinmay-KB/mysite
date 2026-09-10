@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_IMAGE_MODEL, PARENT_REFERENCE_MAX_BYTES, providerAspectRatio } from '../worker/core';
+import { COVER_IMAGE_MODELS, DEFAULT_IMAGE_MODEL, providerAspectRatio } from '../worker/core';
 
 describe('providerAspectRatio', () => {
   it('maps 4:5 to 3:4 when the provider lacks 4:5 (Sunburst)', () => {
@@ -14,7 +14,8 @@ describe('providerAspectRatio', () => {
     expect(DEFAULT_IMAGE_MODEL).toBe('openai/gpt-image-2.5-sunburst');
   });
 
-  it('documents parent original cap at 12MB', () => {
-    expect(PARENT_REFERENCE_MAX_BYTES).toBe(12 * 1024 * 1024);
+  it('prefers cheap models for theme covers while defaulting generations to Sunburst', () => {
+    expect(DEFAULT_IMAGE_MODEL).toBe('openai/gpt-image-2.5-sunburst');
+    expect(COVER_IMAGE_MODELS[0]).toBe('google/gemini-3.1-flash-lite-image');
   });
 });

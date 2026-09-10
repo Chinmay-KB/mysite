@@ -4,7 +4,6 @@ import type { AppEnv } from '../worker/core';
 import { createWorkflowStep } from './helpers/workflow-step';
 import { GENERATION_ID, PARENT_ID, createWorkflowFixture } from './helpers/workflow-run';
 import { encodePng } from './fixtures/valid-png';
-import { PARENT_REFERENCE_MAX_BYTES } from '../worker/core';
 
 function imagePosts(calls: { url: string; body?: unknown }[]) {
   return calls.filter(c => c.url.includes('/api/v1/images') && c.body);
@@ -58,7 +57,7 @@ describe('GenerationWorkflow.run (mocked provider boundary)', () => {
       aspect_ratio?: string;
     };
     expect(body.input_references).toHaveLength(3);
-    expect(body.quality).toBe('high');
+    expect(body.quality).toBe('medium');
     expect(body.aspect_ratio).toBe('1:1');
     const payloads = body.input_references.map(r => r.image_url.url.split(',')[1] ?? '');
     expect(payloads[0]).not.toBe(payloads[1]);
@@ -78,7 +77,7 @@ describe('GenerationWorkflow.run (mocked provider boundary)', () => {
     expect(body.aspect_ratio).toBe('3:4');
   });
 
-  it('sends parent reference from original bytes when under 12MB', async () => {
+  it('prefers the downscaled reference variant for parent even when the original is small', async () => {
     const fx = createWorkflowFixture();
     const parentKey = `users/user-1/${PARENT_ID}/original`;
     const referenceBytes = encodePng(2, 2, 88);
@@ -91,11 +90,11 @@ describe('GenerationWorkflow.run (mocked provider boundary)', () => {
     };
     const parentB64 = body.input_references[0]?.image_url.url.split(',')[1] ?? '';
     const parentBytes = Buffer.from(parentB64, 'base64');
-    expect(parentBytes.equals(encodePng(2, 2, 1))).toBe(true);
-    expect(parentBytes.equals(referenceBytes)).toBe(false);
+    expect(parentBytes.equals(encodePng(2, 2, 1))).toBe(false);
+    expect(parentBytes.equals(referenceBytes)).toBe(true);
   });
 
-  it('template-style input (parent + photo ref, no region) uses original bytes and likeness anchor', async () => {
+  it('template-style input (parent + photo ref, no region) uses reference variant and likeness anchor', async () => {
     const fx = createWorkflowFixture();
     const templateInput = {
       ...fx.input,
@@ -136,26 +135,21 @@ describe('GenerationWorkflow.run (mocked provider boundary)', () => {
     expect(body.prompt).toContain('Match the exact face');
     const parentB64 = body.input_references[0]?.image_url.url.split(',')[1] ?? '';
     const parentBytes = Buffer.from(parentB64, 'base64');
-    expect(parentBytes.equals(encodePng(2, 2, 1))).toBe(true);
-    expect(parentBytes.equals(referenceBytes)).toBe(false);
+    expect(parentBytes.equals(encodePng(2, 2, 1))).toBe(false);
+    expect(parentBytes.equals(referenceBytes)).toBe(true);
   });
 
-  it('falls back to reference.webp for parent when original exceeds 12MB', async () => {
+  it('falls back to the original for parent when no reference variant exists', async () => {
     const fx = createWorkflowFixture();
     const parent = fx.state.assets.find(a => a.id === PARENT_ID)!;
-    parent.bytes = PARENT_REFERENCE_MAX_BYTES + 1;
-    const parentKey = parent.object_key;
-    const referenceBytes = encodePng(2, 2, 88);
-    await fx.env.MEDIA.put(`${parentKey}/reference.webp`, referenceBytes, {
-      httpMetadata: { contentType: 'image/webp' },
-    });
+    parent.bytes = 20 * 1024 * 1024;
     await fx.run(createWorkflowStep());
     const body = imagePosts(fx.providerCalls)[0]?.body as {
       input_references: { image_url: { url: string } }[];
     };
     const parentB64 = body.input_references[0]?.image_url.url.split(',')[1] ?? '';
     const parentBytes = Buffer.from(parentB64, 'base64');
-    expect(parentBytes.equals(referenceBytes)).toBe(true);
+    expect(parentBytes.equals(encodePng(2, 2, 1))).toBe(true);
   });
 
   it('falls back to the backup key when the primary key is out of credit', async () => {

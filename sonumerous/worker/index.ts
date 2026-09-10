@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { ApiError, boundedBytes, digest, id, identity, imageGenerationReady, makeVariants, models, now, ownAsset, prepareUploadImage, publicAsset, type AppEnv, type AssetRow, type GenerationRow } from './core';
+import { ApiError, boundedBytes, COVER_IMAGE_MODELS, digest, id, identity, imageGenerationReady, makeVariants, models, now, ownAsset, prepareUploadImage, publicAsset, type AppEnv, type AssetRow, type GenerationRow } from './core';
 import { buildReferenceIds, composePrompt, generationSchema, preferenceSchema, themeSchema } from './validation';
 import type { GenerationInput, Preference, Theme } from '../shared/types';
 import { coverPromptForThemeId } from './themeSeeds';
@@ -136,7 +136,9 @@ app.post('/api/themes/:id/cover', async c => {
     ? await c.env.DB.prepare("SELECT * FROM generations WHERE theme_id=? AND purpose='theme_cover' AND status IN ('queued','generating','saving') LIMIT 1").bind(themeId).first<GenerationRow>()
     : await c.env.DB.prepare("SELECT * FROM generations WHERE user_id=? AND theme_id=? AND purpose='theme_cover' AND status IN ('queued','generating','saving') LIMIT 1").bind(user.id, themeId).first<GenerationRow>();
   if (inflight) return c.json(inflight, 202);
-  const model = (await models(c.env))[0];
+  // Theme covers render as small tiles: use the cheapest capable model.
+  const available = await models(c.env);
+  const model = COVER_IMAGE_MODELS.flatMap(id => available.find(m => m.id === id) ?? [])[0] ?? available[0];
   if (!model) throw new ApiError(503, 'Image generation is not connected yet.');
   const generationId = id();
   const created = now();
