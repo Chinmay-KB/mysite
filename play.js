@@ -85,9 +85,116 @@ if (trimToy) {
 
 const dreamToy = document.querySelector('[data-dream-toy]');
 if (dreamToy) {
+  let bubbleCanvas;
+  let bubbleContext;
+  let bubbles = [];
+  let bubbleFrame;
+
+  const resizeBubbleCanvas = () => {
+    if (!bubbleCanvas) return;
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    bubbleCanvas.width = window.innerWidth * ratio;
+    bubbleCanvas.height = window.innerHeight * ratio;
+    bubbleCanvas.style.width = `${window.innerWidth}px`;
+    bubbleCanvas.style.height = `${window.innerHeight}px`;
+    bubbleContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+  };
+
+  const startBubbles = () => {
+    if (motion.matches) return;
+    if (!bubbleCanvas) {
+      bubbleCanvas = document.createElement('canvas');
+      bubbleCanvas.className = 'bubble-screensaver';
+      bubbleCanvas.setAttribute('aria-hidden', 'true');
+      document.body.append(bubbleCanvas);
+      bubbleContext = bubbleCanvas.getContext('2d');
+      resizeBubbleCanvas();
+      window.addEventListener('resize', resizeBubbleCanvas, { passive: true });
+    }
+
+    const origin = dreamToy.getBoundingClientRect();
+    const colors = ['#4252ad', '#df461f', '#e3e86a', '#d978a7', '#59a6a1', '#f3a441'];
+    for (let i = 0; i < 34; i += 1) {
+      const radius = 9 + Math.random() * 24;
+      bubbles.push({
+        x: origin.left + Math.random() * origin.width,
+        y: origin.top + Math.random() * origin.height,
+        radius,
+        vx: (Math.random() - 0.5) * 1.8,
+        vy: -(0.8 + Math.random() * 2.4),
+        color: colors[i % colors.length],
+        alpha: 0.42 + Math.random() * 0.3,
+      });
+    }
+
+    if (!bubbleFrame) {
+      let previous = performance.now();
+      const animate = (now) => {
+        const delta = Math.min((now - previous) / 16.67, 2);
+        previous = now;
+        bubbleContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        bubbles.forEach((bubble) => {
+          bubble.x += bubble.vx * delta;
+          bubble.y += bubble.vy * delta;
+          bubble.vy -= 0.006 * delta;
+          bubble.vx *= 0.999;
+
+          if (bubble.x - bubble.radius < 0 || bubble.x + bubble.radius > window.innerWidth) {
+            bubble.vx *= -1;
+            bubble.x = Math.max(bubble.radius, Math.min(window.innerWidth - bubble.radius, bubble.x));
+          }
+        });
+
+        for (let i = 0; i < bubbles.length; i += 1) {
+          for (let j = i + 1; j < bubbles.length; j += 1) {
+            const first = bubbles[i];
+            const second = bubbles[j];
+            const dx = second.x - first.x;
+            const dy = second.y - first.y;
+            const distance = Math.hypot(dx, dy);
+            const minimum = first.radius + second.radius;
+            if (distance === 0 || distance >= minimum) continue;
+            const nx = dx / distance;
+            const ny = dy / distance;
+            const overlap = (minimum - distance) / 2;
+            first.x -= nx * overlap;
+            first.y -= ny * overlap;
+            second.x += nx * overlap;
+            second.y += ny * overlap;
+            const relativeVelocity = (second.vx - first.vx) * nx + (second.vy - first.vy) * ny;
+            if (relativeVelocity > 0) continue;
+            first.vx += relativeVelocity * nx;
+            first.vy += relativeVelocity * ny;
+            second.vx -= relativeVelocity * nx;
+            second.vy -= relativeVelocity * ny;
+          }
+        }
+
+        bubbles = bubbles.filter((bubble) => bubble.y + bubble.radius > -20);
+        bubbles.forEach((bubble) => {
+          bubbleContext.beginPath();
+          bubbleContext.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+          bubbleContext.fillStyle = bubble.color;
+          bubbleContext.globalAlpha = bubble.alpha;
+          bubbleContext.fill();
+          bubbleContext.beginPath();
+          bubbleContext.arc(bubble.x - bubble.radius * 0.3, bubble.y - bubble.radius * 0.3, bubble.radius * 0.16, 0, Math.PI * 2);
+          bubbleContext.fillStyle = '#fffefa';
+          bubbleContext.globalAlpha = 0.75;
+          bubbleContext.fill();
+        });
+        bubbleContext.globalAlpha = 1;
+        if (bubbles.length) bubbleFrame = requestAnimationFrame(animate);
+        else bubbleFrame = undefined;
+      };
+      bubbleFrame = requestAnimationFrame(animate);
+    }
+  };
+
   dreamToy.addEventListener('click', () => {
     const on = dreamToy.classList.toggle('is-dreaming');
     dreamToy.setAttribute('aria-pressed', on ? 'true' : 'false');
+    startBubbles();
     const timeEl = dreamToy.querySelector('[data-dream-time]');
     if (timeEl && on) {
       const now = new Date();
