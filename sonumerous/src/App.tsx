@@ -238,7 +238,7 @@ function Create({ themes, models, modelsState, jobs, onSubmit, submitting, sessi
     const themeSlug = sessionStorage.getItem('sonumerous-open-theme-slug');
     if (themeSlug) {
       sessionStorage.removeItem('sonumerous-open-theme-slug');
-      const t = themes.find(x => x.id === themeSlug || x.id.startsWith(`${themeSlug}-`));
+      const t = themes.find(x => x.id === themeSlug || x.id === `theme:${themeSlug}` || x.id.startsWith(`${themeSlug}-`));
       if (t) setModalTheme(t);
     }
     const photoId = sessionStorage.getItem('sonumerous-pending-photo');
@@ -364,7 +364,7 @@ function Create({ themes, models, modelsState, jobs, onSubmit, submitting, sessi
       {themes.filter(theme => !theme.hidden).map(theme => (
         <button key={theme.id} type="button" className="template-card" role="listitem" onClick={() => { setModalTheme(theme); setPhoto(null); }}>
           <div className="template-card-art">
-            {theme.cover ? <TemplateTileCover asset={theme.cover} /> : <div className="theme-art template-art-placeholder" aria-hidden="true"><span>{themeArtBadge(theme)}</span></div>}
+            {theme.cover ? <TemplateTileCover asset={theme.cover} /> : theme.coverUrl ? <img className="template-tile-img" src={theme.coverUrl} alt="" loading="lazy" decoding="async" /> : <div className="theme-art template-art-placeholder" aria-hidden="true"><span>{themeArtBadge(theme)}</span></div>}
           </div>
           <span className="template-card-label">{theme.name}</span>
         </button>

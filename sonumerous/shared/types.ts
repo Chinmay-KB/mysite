@@ -5,6 +5,8 @@ export interface Asset {
 export interface Theme {
   id: string; name: string; description: string; prompt: string; avoid: string; updated_at: string;
   cover_asset_id: string | null; scope?: 'user' | 'global'; hidden?: number; default_aspect?: string; cover?: Asset | null;
+  /** Public cover art for global themes (served from /public/covers, no sign-in needed). */
+  coverUrl?: string | null;
 }
 export interface Preference { id: string; text: string; theme_id: string | null }
 export interface Model { id: string; name: string; description: string; ratios: string[]; maxReferences: number }

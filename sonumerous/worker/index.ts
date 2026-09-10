@@ -117,7 +117,9 @@ app.get('/api/themes', async c => {
     if (theme.cover_asset_id && theme.scope !== 'global') {
       try { cover = publicAsset(await ownAsset(c.env, user.id, theme.cover_asset_id)); } catch { cover = null; }
     }
-    return { ...theme, cover };
+    // Global themes use shared public cover art (no per-user asset needed).
+    const coverUrl = theme.scope === 'global' ? `/public/covers/${theme.id.replace(/^theme:/, '')}` : null;
+    return { ...theme, cover, coverUrl };
   }));
   return c.json(enriched);
 });
