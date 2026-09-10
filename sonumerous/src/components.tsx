@@ -114,7 +114,6 @@ export function TemplateModalPhotoStrip({
           ref={input}
           type="file"
           accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif"
-          capture="environment"
           onChange={e => void handleFiles(e.target.files)}
         />
         <div className="template-modal-strip-upload-wrap">
