@@ -51,6 +51,14 @@ USED_BY_TRANSLATIONS_CLEANER = [
     ("Waterfly III", "assets/orgs/waterfly.svg", "https://github.com/dreautall/waterfly-iii"),
 ]
 
+GH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.58 2 12.26c0 4.52 2.87 8.35 6.84 9.7.5.1.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.36-3.37-1.36-.45-1.18-1.12-1.5-1.12-1.5-.92-.64.07-.63.07-.63 1.02.07 1.55 1.06 1.55 1.06.9 1.56 2.36 1.11 2.94.85.09-.67.35-1.11.64-1.37-2.22-.26-4.56-1.13-4.56-5.02 0-1.11.39-2.01 1.03-2.72-.1-.26-.45-1.32.1-2.74 0 0 .84-.27 2.75 1.04A9.3 9.3 0 0 1 12 6.84c.85 0 1.71.12 2.51.34 1.91-1.31 2.75-1.04 2.75-1.04.55 1.42.2 2.48.1 2.74.64.71 1.03 1.61 1.03 2.72 0 3.9-2.34 4.76-4.57 5.02.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.8 0 .27.18.59.69.49A10.03 10.03 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/></svg>'
+
+
+def gh_icon_link(repo, name):
+    return (f'<a class="gh-icon" href="{repo}" rel="noopener noreferrer" '
+            f'title="{html.escape(name)} on GitHub" aria-label="View {html.escape(name)} on GitHub">{GH_ICON}</a>')
+
+
 WP_X_POSTS_PATH = ROOT / "content" / "wp-x-posts.json"
 
 IFX_BUILT_Y = {
@@ -335,7 +343,7 @@ def wp_interest_section():
         cards.append(f"""<article class="wp-repo">
   <a href="{p['repo']}" rel="noopener noreferrer"><h4>{name}</h4></a>
   <p>{html.escape(p['desc'])}</p>
-  <p class="experiment-meta"><span class="stars" title="{p['stars']} stars on GitHub">★ {p['stars']}</span> · <a href="{p['repo']}" rel="noopener noreferrer">GitHub ↗</a></p>
+  <p class="experiment-meta"><span class="stars" title="{p['stars']} stars on GitHub">★ {p['stars']}</span>{gh_icon_link(p['repo'], p['name'])}</p>
 </article>""")
     posts = wp_posts_html()
     section = f"""<section class="wp-lab" id="wp-lab" aria-labelledby="wp-lab-h">
@@ -353,7 +361,7 @@ def ifx_feature():
   <div class="ifx-copy">
     <h3><a href="{IFX_BUILT_Y["site"]}" rel="noopener noreferrer">ifXBuiltY</a> <span class="stars" title="{IFX_BUILT_Y["stars"]} star on GitHub">★ {IFX_BUILT_Y["stars"]}</span></h3>
     <p>{html.escape(IFX_BUILT_Y["desc"])}</p>
-    <p class="ifx-meta"><a href="{IFX_BUILT_Y["repo"]}" rel="noopener noreferrer">source on GitHub ↗</a> <a href="{IFX_BUILT_Y["site"]}" rel="noopener noreferrer">try xbuildsy.com ↗</a></p>
+    <p class="ifx-meta">{gh_icon_link(IFX_BUILT_Y["repo"], "ifXBuiltY")} <a href="{IFX_BUILT_Y["site"]}" rel="noopener noreferrer">try xbuildsy.com ↗</a></p>
   </div>
   <div class="ifx-stage">
     <img class="ifx-card" src="{IFX_BUILT_Y["card"]}" width="640" height="360" alt="ifXBuiltY banner: stylized phone frames and the xBuildsy mark" loading="lazy">
@@ -381,14 +389,14 @@ def experiment_card(p):
     extra = ""
     if p["name"] == "translations_cleaner":
         logos = "".join(
-            f'<a href="{href}" rel="noopener noreferrer" title="{html.escape(org)}" aria-label="{html.escape(org)} uses translations_cleaner">'
+            f'<a href="{href}" rel="noopener noreferrer" title="{html.escape(org)}" aria-label="{html.escape(org)} uses translations_cleaner" style="--i:{i}">'
             f'<img src="{src}" alt="{html.escape(org)}" width="28" height="28" loading="lazy"></a>'
-            for org, src, href in USED_BY_TRANSLATIONS_CLEANER)
+            for i, (org, src, href) in enumerate(USED_BY_TRANSLATIONS_CLEANER))
         extra = f'<p class="used-by"><span>used by</span>{logos}</p>'
     return f"""<article class="experiment">
   <a href="{p['repo']}" rel="noopener noreferrer"><h3>{name}</h3></a>
   <p>{desc}</p>
-  <p class="experiment-meta"><span class="stars" title="{stars} stars on GitHub">★ {stars}</span> · <a href="{p['repo']}" rel="noopener noreferrer">GitHub ↗</a></p>
+  <p class="experiment-meta"><span class="stars" title="{stars} stars on GitHub">★ {stars}</span>{gh_icon_link(p['repo'], p['name'])}</p>
   {motif}
 {extra}</article>"""
 

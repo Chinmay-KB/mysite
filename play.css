@@ -110,8 +110,12 @@ body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index
 .ifx-spotlight { display:grid; grid-template-columns:minmax(250px,.75fr) minmax(0,1.25fr); gap:40px 48px; padding:36px 0 48px; border-top:4px solid #283125; border-bottom:4px solid #283125; align-items:start; }
 .ifx-copy h3 { font-size:clamp(28px,4vw,42px); margin:0 0 12px; }
 .ifx-copy h3 a { color:#4252ad; text-decoration-thickness:3px; }
-.ifx-meta { display:flex; flex-wrap:wrap; gap:8px 18px; font-size:15px; color:#5d5245; }
+.ifx-meta { display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; font-size:15px; color:#5d5245; }
 .ifx-meta a { font-weight:700; }
+.gh-icon { display:inline-grid; place-items:center; width:28px; height:28px; color:#283125; border:2px solid currentColor; border-radius:50%; text-decoration:none !important; transition:transform 150ms ease, color 150ms ease, background 150ms ease; }
+.gh-icon svg { width:17px; height:17px; }
+.gh-icon:hover,.gh-icon:focus-visible { color:#4252ad; background:#e3e86a; transform:translateY(-2px); }
+.gh-icon:focus-visible { outline:3px solid #df461f; outline-offset:3px; }
 .ifx-facts { display:flex; flex-wrap:wrap; gap:7px; margin:24px 0 20px; }
 .ifx-facts span { padding:7px 9px; background:#fffefa; border:1px solid #28312566; font:500 11px 'DM Mono',monospace; }
 .ifx-facts span:first-child { background:#e3e86a; border-color:#283125; }
@@ -134,11 +138,11 @@ body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index
 .wp-post .twitter-tweet p { margin:0 0 10px; }
 .wp-post iframe { max-width:100%; }
 
-.experiment { padding:8px 0 0; display:grid; grid-template-columns:1fr; gap:18px; align-items:start; border-top:2px solid #28312566; }
+.experiment { padding:8px 0 0; display:grid; grid-template-columns:1fr; gap:10px; align-items:start; border-top:2px solid #28312566; }
 .experiment:nth-of-type(even) { margin-left:0; }
-.experiment h3 { font-size:24px; overflow-wrap:anywhere; margin:0 0 10px; }
+.experiment h3 { font-size:24px; overflow-wrap:anywhere; margin:0 0 6px; }
 .experiment>p { max-width:42ch; font-size:18px; margin:0; }
-.experiment-meta { font-size:14px; margin:0 0 8px; color:#5d5245; }
+.experiment-meta { display:flex; align-items:center; gap:10px; font-size:14px; margin:0; color:#5d5245; }
 .experiment-meta a { font-weight:700; }
 .used-by { display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; margin:0; font-size:13px; font-weight:700; color:#5d5245; }
 .used-by a { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:#fffefa; border:2px solid #283125; overflow:hidden; margin-left:-12px; box-shadow:2px 2px 0 #283125; transition:scale 150ms ease; }
@@ -146,6 +150,9 @@ body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index
 .used-by a:hover { scale:1.15; }
 .used-by a:focus-visible { outline:3px solid #df461f; outline-offset:2px; }
 .used-by img { width:28px; height:28px; display:block; object-fit:contain; }
+.used-by a { animation:used-by-wiggle 5.6s ease-in-out infinite; animation-delay:calc(var(--i) * -0.7s); }
+@keyframes used-by-wiggle { 0%,72%,100% { transform:rotate(0deg) translateY(0); } 76% { transform:rotate(-4deg) translateY(-1px); } 80% { transform:rotate(3deg) translateY(0); } 84% { transform:rotate(-2deg) translateY(-1px); } 88% { transform:rotate(0deg) translateY(0); } }
+.used-by a:hover,.used-by a:focus-visible { animation-play-state:paused; }
 .experiment>a { text-decoration-thickness:2px; }
 .experiment .strike-spec,.experiment .code-morph,.experiment .stamp-row,.experiment .night-bar { justify-self:start; max-width:100%; align-self:center; }
 
@@ -219,6 +226,6 @@ body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index
 
 @media(prefers-reduced-motion:reduce) {
   .name-line>span:hover { animation:none; }
-  .doodle,.bubble,.stack-strip::before,.stack-strip::after,.stack-logo,.hello-note,.night-bar.is-dreaming i { animation:none; }
+  .doodle,.bubble,.stack-strip::before,.stack-strip::after,.stack-logo,.used-by a,.hello-note,.night-bar.is-dreaming i { animation:none; }
   .bubble.is-popped { transform:none; }
 }
