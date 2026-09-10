@@ -42,6 +42,15 @@ PROJECTS = [
      "motif": '<div class="night-bar" aria-hidden="true"><span>daydreaming…</span><span><i>●</i> 02:47</span></div>'},
 ]
 
+USED_BY_TRANSLATIONS_CLEANER = [
+    ("FluffyChat", "assets/orgs/fluffychat.svg", "https://github.com/krille-chan/fluffychat"),
+    ("Canonical", "assets/orgs/canonical.png", "https://github.com/canonical/ubuntu-desktop-provision"),
+    ("Linagora", "assets/orgs/linagora.png", "https://github.com/linagora/twake-on-matrix"),
+    ("Acter", "assets/orgs/acterglobal.png", "https://github.com/acterglobal/a3"),
+    ("Archethic", "assets/orgs/archethic-foundation.png", "https://github.com/archethic-foundation/archethic-wallet"),
+    ("Waterfly III", "assets/orgs/waterfly.svg", "https://github.com/dreautall/waterfly-iii"),
+]
+
 WP_X_POSTS_PATH = ROOT / "content" / "wp-x-posts.json"
 
 IFX_BUILT_Y = {
@@ -369,12 +378,19 @@ def experiment_card(p):
   <span>daydreaming…</span><span><i>●</i> <span data-dream-time>02:47</span></span>
 </button>"""
     stars = p.get("stars", 0)
+    extra = ""
+    if p["name"] == "translations_cleaner":
+        logos = "".join(
+            f'<a href="{href}" rel="noopener noreferrer" title="{html.escape(org)}" aria-label="{html.escape(org)} uses translations_cleaner">'
+            f'<img src="{src}" alt="{html.escape(org)}" width="28" height="28" loading="lazy"></a>'
+            for org, src, href in USED_BY_TRANSLATIONS_CLEANER)
+        extra = f'<p class="used-by"><span>used by</span>{logos}</p>'
     return f"""<article class="experiment">
   <a href="{p['repo']}" rel="noopener noreferrer"><h3>{name}</h3></a>
   <p>{desc}</p>
   <p class="experiment-meta"><span class="stars" title="{stars} stars on GitHub">★ {stars}</span> · <a href="{p['repo']}" rel="noopener noreferrer">GitHub ↗</a></p>
   {motif}
-</article>"""
+{extra}</article>"""
 
 
 STACK_STRIP = """<div class="stack-strip is-orbit" aria-label="Stacks I reach for: Flutter, React, Next.js, TypeScript, Android, iOS">

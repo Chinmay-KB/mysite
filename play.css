@@ -140,6 +140,12 @@ body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index
 .experiment>p { max-width:42ch; font-size:18px; margin:0; }
 .experiment-meta { font-size:14px; margin:0 0 8px; color:#5d5245; }
 .experiment-meta a { font-weight:700; }
+.used-by { display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; margin:0; font-size:13px; font-weight:700; color:#5d5245; }
+.used-by a { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:#fffefa; border:2px solid #283125; overflow:hidden; margin-left:-12px; box-shadow:2px 2px 0 #283125; transition:scale 150ms ease; }
+.used-by a:first-of-type { margin-left:0; }
+.used-by a:hover { scale:1.15; }
+.used-by a:focus-visible { outline:3px solid #df461f; outline-offset:2px; }
+.used-by img { width:28px; height:28px; display:block; object-fit:contain; }
 .experiment>a { text-decoration-thickness:2px; }
 .experiment .strike-spec,.experiment .code-morph,.experiment .stamp-row,.experiment .night-bar { justify-self:start; max-width:100%; align-self:center; }
 
