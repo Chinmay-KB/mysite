@@ -78,4 +78,38 @@ describe('composePrompt', () => {
     expect(text).toContain('Match the exact face');
     expect(text).toContain('MUST respect the natural proportions');
   });
+
+  it('locks the body for photo edits, with theme extras and overrides', () => {
+    const base = {
+      prompt: 'Studio look.',
+      model: 'openai/gpt-image-2.5-sunburst',
+      aspectRatio: '1:1',
+      referenceIds: [],
+      themePrompt: '',
+      avoid: '',
+      parentAssetId: '550e8400-e29b-41d4-a716-446655440000' as const,
+      preserve: '',
+      annotationAssetId: null,
+      region: null,
+      usePreferences: false,
+      requestKey: '550e8400-e29b-41d4-a716-446655440002',
+    };
+    const globalStudio = composePrompt(generationSchema.parse({ ...base, themeId: 'theme:studio' }), []);
+    expect(globalStudio).toContain('Preserve the body:');
+    expect(globalStudio).toContain('same shoulder width');
+    expect(globalStudio).toContain('drapes on the existing frame');
+
+    const legacyStudio = composePrompt(generationSchema.parse({ ...base, themeId: 'studio-user-1' }), []);
+    expect(legacyStudio).toContain('drapes on the existing frame');
+
+    const actionFigure = composePrompt(generationSchema.parse({ ...base, themeId: 'action-figure-user-1' }), []);
+    expect(actionFigure).toContain('recognizable on the collectible figure');
+    expect(actionFigure).not.toContain('same shoulder width');
+
+    const noParent = composePrompt(
+      generationSchema.parse({ ...base, parentAssetId: null, themeId: 'theme:studio' }),
+      [],
+    );
+    expect(noParent).not.toContain('Preserve the body:');
+  });
 });

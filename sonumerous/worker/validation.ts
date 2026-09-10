@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { bodyAnchorForThemeId } from './themeSeeds';
 
 export const regionSchema = z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), width: z.number().positive().max(1), height: z.number().positive().max(1) }).refine(r => r.x + r.width <= 1.001 && r.y + r.height <= 1.001, 'Selection must be inside the image');
 export const generationSchema = z.object({
@@ -23,6 +24,7 @@ export function composePrompt(input: z.infer<typeof generationSchema>, preferenc
     input.parentAssetId
       ? 'Edit the first reference image. Preserve its identity and composition unless explicitly asked otherwise.\n\nMatch the exact face: same eyes, nose, lips, face shape, skin tone, age. Do not beautify into a different person.'
       : 'Create one image following this creative brief.',
+    input.parentAssetId && `Preserve the body:\n${bodyAnchorForThemeId(input.themeId)}`,
     input.themePrompt && `Creative direction:\n${input.themePrompt}`,
     `Requested ${input.parentAssetId ? 'changes' : 'image'}:\n${input.prompt}`,
     input.preserve && `Keep unchanged:\n${input.preserve}`,

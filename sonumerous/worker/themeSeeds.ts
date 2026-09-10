@@ -10,7 +10,17 @@ export interface ThemeSeed {
   hidden?: boolean;
   /** Default aspect ratio for generations from this template. */
   defaultAspect?: string;
+  /** Replaces the general body anchor when the theme deliberately transforms the body. */
+  bodyAnchorOverride?: string;
+  /** Appended to the general body anchor for themes that dress or reframe the body. */
+  bodyAnchorExtra?: string;
 }
+
+/** Default body-preservation anchor for photo edits: the body must survive the
+ * restyle as faithfully as the face. Applied to every generation with a parent
+ * photo unless the theme overrides it. */
+export const BODY_ANCHOR =
+  'Keep the exact body of the person in the first reference image: same shoulder width, same torso, same posture, same framing and camera distance. Do not widen, narrow, athleticize, slim, or otherwise reshape the body. Garments, lighting, and background may change; the frame underneath must not. Frame the shot exactly like the reference — do not reveal body parts that are not visible in it, and never invent unseen anatomy.';
 
 /** Retro-modern 80s wardrobe (replaces legacy “coloured Indian clothes” clause). */
 export const EIGHTIES_CLOTHING =
@@ -67,6 +77,8 @@ export const THEME_SEEDS: ThemeSeed[] = [
       'Hyperrealistic professional studio editorial portrait of a young Indian woman. Medium head-and-shoulders, direct gaze, neutral expression. Pure uniform black background with no texture. Soft side key light, gentle fill, subtle chiaroscuro. Natural realistic skin texture, sharp eyes with catchlights, 85mm portrait lens look, shallow depth of field, neutral natural tones.',
     hidden: false,
     defaultAspect: '4:5',
+    bodyAnchorExtra:
+      'The editorial outfit drapes on the existing frame; do not reshape the frame to fit the garments. If the reference shows only the head, keep a head-only crop and never invent shoulders or a torso.',
   },
   {
     slug: 'scribbles',
@@ -100,6 +112,8 @@ export const THEME_SEEDS: ThemeSeed[] = [
       'Intimate travel collage featuring an Indian traveler as the main subject in instant-photo style at a lesser-known destination. Blue-ink postcard, souvenirs, balanced memento layout, natural lighting, personal and cleanly curated.',
     hidden: false,
     defaultAspect: '1:1',
+    bodyAnchorExtra:
+      'Preserve body proportions inside each embedded instant photo; collage layout and postcard framing must not stretch or squeeze the person.',
   },
   {
     slug: 'yearbook-90s',
@@ -122,6 +136,8 @@ export const THEME_SEEDS: ThemeSeed[] = [
     coverPrompt:
       'Early-2000s fashion editorial portrait of a young Indian woman. Denim or Y2K styling, metallic details, glossy textures, bright studio lighting, slightly cool palette, and subtle digital noise. Natural skin tone and realistic facial features.',
     hidden: true,
+    bodyAnchorExtra:
+      'Denim and Y2K styling drape on the existing frame; do not reshape the frame to fit the outfit.',
   },
   {
     slug: 'action-figure',
@@ -133,6 +149,8 @@ export const THEME_SEEDS: ThemeSeed[] = [
     coverPrompt:
       'Collectible action-hero toy figure styled as an Indian hero, sealed in clear toy packaging with accessories. Studio product lighting, playful diorama props, no readable brand names or logos on the box.',
     hidden: true,
+    bodyAnchorOverride:
+      'Keep the face, hairstyle, and outfit of the person recognizable on the collectible figure. Toy packaging proportions apply to the box and the figure as an object, not to the person.',
   },
   {
     slug: 'cinematic-poster',
@@ -160,6 +178,19 @@ export const THEME_SEEDS: ThemeSeed[] = [
 
 export function themeIdForUser(slug: string, userId: string) {
   return `${slug}-${userId}`;
+}
+
+function seedForThemeId(themeId: string): ThemeSeed | undefined {
+  return THEME_SEEDS.find(s => themeId === s.slug || themeId === `theme:${s.slug}` || themeId.startsWith(`${s.slug}-`));
+}
+
+/** Body anchor for a photo edit: theme override wins, otherwise the general
+ * anchor plus any theme extra. Always returns the general anchor when the
+ * theme is unknown or has no customization. */
+export function bodyAnchorForThemeId(themeId: string | null): string {
+  const seed = themeId ? seedForThemeId(themeId) : undefined;
+  if (seed?.bodyAnchorOverride) return seed.bodyAnchorOverride;
+  return [BODY_ANCHOR, seed?.bodyAnchorExtra].filter(Boolean).join('\n');
 }
 
 export function coverPromptForThemeId(themeId: string, userId: string): string | undefined {
