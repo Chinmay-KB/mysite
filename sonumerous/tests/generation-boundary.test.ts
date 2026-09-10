@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildReferenceIds, composePrompt } from '../worker/validation';
+import type { AppEnv } from '../worker/core';
 import { createWorkflowStep } from './helpers/workflow-step';
 import { GENERATION_ID, PARENT_ID, createWorkflowFixture } from './helpers/workflow-run';
 import { encodePng } from './fixtures/valid-png';
@@ -155,6 +156,24 @@ describe('GenerationWorkflow.run (mocked provider boundary)', () => {
     const parentB64 = body.input_references[0]?.image_url.url.split(',')[1] ?? '';
     const parentBytes = Buffer.from(parentB64, 'base64');
     expect(parentBytes.equals(referenceBytes)).toBe(true);
+  });
+
+  it('falls back to the backup key when the primary key is out of credit', async () => {
+    const fx = createWorkflowFixture({ providerStatuses: [402, 200] });
+    (fx.env as AppEnv).OPENROUTER_API_KEY_BACKUP = 'test-backup-key';
+    await fx.run(createWorkflowStep());
+    expect(imagePosts(fx.providerCalls)).toHaveLength(2);
+    expect(fx.state.generations[0].status).toBe('ready');
+    expect(fx.state.generations[0].error).toBeNull();
+  });
+
+  it('reports out of credit when both keys are exhausted', async () => {
+    const fx = createWorkflowFixture({ providerStatuses: [402, 402] });
+    (fx.env as AppEnv).OPENROUTER_API_KEY_BACKUP = 'test-backup-key';
+    await fx.run(createWorkflowStep());
+    expect(imagePosts(fx.providerCalls)).toHaveLength(2);
+    expect(fx.state.generations[0].status).toBe('failed');
+    expect(fx.state.generations[0].error).toMatch(/out of credit/i);
   });
 
   it('terminates failed on provider 429 without ready status', async () => {

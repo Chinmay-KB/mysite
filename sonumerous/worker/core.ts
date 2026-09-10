@@ -1,12 +1,21 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import type { Asset, Generation, Model } from '../shared/types';
 
-export interface AppEnv extends Omit<Env, 'LOCAL_DEV' | 'ACCESS_DOMAIN' | 'ACCESS_AUD'> { OPENROUTER_API_KEY?: string; LOCAL_DEV: string; ACCESS_DOMAIN: string; ACCESS_AUD: string }
+export interface AppEnv extends Omit<Env, 'LOCAL_DEV' | 'ACCESS_DOMAIN' | 'ACCESS_AUD'> { OPENROUTER_API_KEY?: string; OPENROUTER_API_KEY_BACKUP?: string; LOCAL_DEV: string; ACCESS_DOMAIN: string; ACCESS_AUD: string }
 export interface AssetRow extends Asset { user_id: string; object_key: string; bytes: number; sha256: string | null }
 export interface GenerationRow extends Generation { user_id: string; attempted_at: string | null; request_key: string; theme_id: string | null; purpose: 'user' | 'theme_cover' }
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export const id = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
+
+/** Image provider keys in priority order: primary first, backup as fallback. Values are never logged. */
+export function imageApiKeys(env: AppEnv): string[] {
+  return [env.OPENROUTER_API_KEY, env.OPENROUTER_API_KEY_BACKUP].filter((key): key is string => !!key);
+}
+
+export function imageGenerationReady(env: AppEnv): boolean {
+  return imageApiKeys(env).length > 0;
+}
 export async function digest(bytes: ArrayBuffer) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(b => b.toString(16).padStart(2, '0')).join(''); }
 
 export async function identity(request: Request, env: AppEnv) {

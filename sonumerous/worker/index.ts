@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { ApiError, boundedBytes, digest, id, identity, makeVariants, models, now, ownAsset, prepareUploadImage, publicAsset, type AppEnv, type AssetRow, type GenerationRow } from './core';
+import { ApiError, boundedBytes, digest, id, identity, imageGenerationReady, makeVariants, models, now, ownAsset, prepareUploadImage, publicAsset, type AppEnv, type AssetRow, type GenerationRow } from './core';
 import { buildReferenceIds, composePrompt, generationSchema, preferenceSchema, themeSchema } from './validation';
 import type { GenerationInput, Preference, Theme } from '../shared/types';
 import { coverPromptForThemeId } from './themeSeeds';
@@ -91,7 +91,7 @@ app.get('/api/session', async c => {
   const loginUrl = c.env.ACCESS_AUD ? `/cdn-cgi/access/login?redirect_url=${encodeURIComponent('/app/')}` : undefined;
   if (!user) return c.json({ authenticated: false, loginUrl });
   await c.env.DB.prepare('INSERT INTO users (id, email) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET email=excluded.email').bind(user.id, user.email).run();
-  return c.json({ authenticated: true, email: user.email, generationReady: Boolean(c.env.OPENROUTER_API_KEY), local: c.env.LOCAL_DEV === 'true' });
+  return c.json({ authenticated: true, email: user.email, generationReady: imageGenerationReady(c.env), local: c.env.LOCAL_DEV === 'true' });
 });
 app.use('/api/*', async (c, next) => { const user = await identity(c.req.raw, c.env); if (!user) throw new ApiError(401, 'Your session has ended. Sign in again to continue.'); c.set('user', user); await next(); });
 app.use('/media/*', async (c, next) => { const user = await identity(c.req.raw, c.env); if (!user) throw new ApiError(401, 'Sign in to view this image.'); c.set('user', user); await next(); });
@@ -131,7 +131,7 @@ app.post('/api/themes/:id/cover', async c => {
   ).bind(themeId, user.id).first<Theme>();
   if (!theme) throw new ApiError(404, 'Theme not found.');
   if (theme.cover_asset_id) return c.json({ ok: true, coverAssetId: theme.cover_asset_id });
-  if (!c.env.OPENROUTER_API_KEY) throw new ApiError(503, 'Image generation is not connected yet. You can still save references and themes.');
+  if (!imageGenerationReady(c.env)) throw new ApiError(503, 'Image generation is not connected yet. You can still save references and themes.');
   const inflight = theme.scope === 'global'
     ? await c.env.DB.prepare("SELECT * FROM generations WHERE theme_id=? AND purpose='theme_cover' AND status IN ('queued','generating','saving') LIMIT 1").bind(themeId).first<GenerationRow>()
     : await c.env.DB.prepare("SELECT * FROM generations WHERE user_id=? AND theme_id=? AND purpose='theme_cover' AND status IN ('queued','generating','saving') LIMIT 1").bind(user.id, themeId).first<GenerationRow>();
@@ -281,7 +281,7 @@ app.get('/api/assets/:id', async c => {
 app.get('/api/generations', async c => c.json((await c.env.DB.prepare("SELECT * FROM generations WHERE user_id=? AND purpose='user' ORDER BY created_at DESC LIMIT 30").bind(c.get('user').id).all<GenerationRow>()).results));
 app.post('/api/generations', async c => {
   const input = generationSchema.parse(await jsonBody(c.req.raw)); const user = c.get('user');
-  if (!c.env.OPENROUTER_API_KEY) throw new ApiError(503, 'Image generation is not connected yet. You can still save references and themes.');
+  if (!imageGenerationReady(c.env)) throw new ApiError(503, 'Image generation is not connected yet. You can still save references and themes.');
   const existing = await c.env.DB.prepare('SELECT * FROM generations WHERE user_id=? AND request_key=?').bind(user.id,input.requestKey).first<GenerationRow>();
   if (existing) { if (existing.status === 'queued') await c.env.GENERATE.createBatch([{id:existing.id,params:{generationId:existing.id}}]); return c.json(existing,202); }
   const model = (await models(c.env)).find(m => m.id === input.model);

@@ -1,5 +1,5 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers';
-import { boundedBytes, DEFAULT_IMAGE_MODEL, makeVariants, now, ownAsset, parentReferenceObject, providerAspectRatio, referenceObject, type AppEnv, type GenerationRow } from './core';
+import { boundedBytes, DEFAULT_IMAGE_MODEL, imageApiKeys, makeVariants, now, ownAsset, parentReferenceObject, providerAspectRatio, referenceObject, type AppEnv, type GenerationRow } from './core';
 import type { GenerationInput } from '../shared/types';
 import { slugFromThemeId, visiblePublicThemes } from './themeSeeds';
 
@@ -65,18 +65,27 @@ export class GenerationWorkflow extends WorkflowEntrypoint<AppEnv, GenerationPar
           provider: { only: [endpoint.provider_tag], allow_fallbacks: false },
         };
         if (input.model === DEFAULT_IMAGE_MODEL) requestBody.quality = 'high';
-        const response = await fetch('https://openrouter.ai/api/v1/images', {
-          method:'POST', signal:AbortSignal.timeout(540000),
-          headers:{Authorization:`Bearer ${this.env.OPENROUTER_API_KEY}`, 'Content-Type':'application/json'},
-          body:JSON.stringify(requestBody),
-        });
-        if (!response.ok) {
-          // Log only the status (never headers, body, or credentials) so the
-          // owner can tell a rejected key (401) from an empty account (402).
-          console.log(JSON.stringify({ event: 'openrouter_images_status', generationId, model: input.model, provider: endpoint.provider_tag, status: response.status }));
-          await response.body?.cancel();
-          throw new Error(response.status === 429 ? 'The image model is busy. Try again in a little while.' : response.status === 401 ? 'The studio image key was rejected. The owner needs to store a valid key.' : response.status === 402 ? 'The studio image account is out of credit. The owner needs to top it up.' : 'The model could not complete this image. Try another prompt or model.');
+        // Try the primary key first; on key/credit/rate-limit rejections fall
+        // back to the backup key once. A rejected attempt produces no image
+        // (and no charge), so retrying with the other key is safe. Only the
+        // key label and status are logged — never key material.
+        const apiKeys = imageApiKeys(this.env);
+        let response: Response | null = null;
+        let lastStatus = 0;
+        for (const [index, apiKey] of apiKeys.entries()) {
+          const attempt = await fetch('https://openrouter.ai/api/v1/images', {
+            method:'POST', signal:AbortSignal.timeout(540000),
+            headers:{Authorization:`Bearer ${apiKey}`, 'Content-Type':'application/json'},
+            body:JSON.stringify(requestBody),
+          });
+          if (attempt.ok) { response = attempt; break; }
+          lastStatus = attempt.status;
+          await attempt.body?.cancel();
+          console.log(JSON.stringify({ event: 'openrouter_images_status', generationId, model: input.model, provider: endpoint.provider_tag, status: lastStatus, key: index === 0 ? 'primary' : 'backup' }));
+          if ((lastStatus === 401 || lastStatus === 402 || lastStatus === 429) && index + 1 < apiKeys.length) continue;
+          throw new Error(lastStatus === 429 ? 'The image model is busy. Try again in a little while.' : lastStatus === 401 ? 'The studio image key was rejected. The owner needs to store a valid key.' : lastStatus === 402 ? 'The studio image account is out of credit. The owner needs to top it up.' : 'The model could not complete this image. Try another prompt or model.');
         }
+        if (!response) throw new Error('Image generation is not connected yet. You can still save references and themes.');
         // Store the bounded provider response before further processing. Subsequent steps never regenerate it.
         const bytes = await boundedBytes(response.body, 24 * 1024 * 1024);
         await this.env.MEDIA.put(rawKey,bytes,{httpMetadata:{contentType:'application/json'}});

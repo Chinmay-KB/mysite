@@ -60,7 +60,7 @@ export function buildGenerationInput(): GenerationInput {
   };
 }
 
-export function createWorkflowFixture(options?: { providerStatus?: number; invalidOutput?: boolean }) {
+export function createWorkflowFixture(options?: { providerStatus?: number; providerStatuses?: number[]; invalidOutput?: boolean }) {
   const input = buildGenerationInput();
   const referenceIds = [PARENT_ID, ANNOTATION_ID, EXTRA_REF_ID];
   const generation: GenerationRow = {
@@ -107,6 +107,7 @@ export function createWorkflowFixture(options?: { providerStatus?: number; inval
     ? { data: [{ b64_json: 'not-a-valid-image!!!', media_type: 'image/png' }] }
     : { data: [{ b64_json: b64, media_type: 'image/png' }] };
 
+  const statusQueue = [...(options?.providerStatuses ?? (options?.providerStatus !== undefined ? [options.providerStatus] : []))];
   const fetchImpl = async (url: string, init?: RequestInit) => {
     if (url.includes('/endpoints')) {
       return new Response(
@@ -126,8 +127,9 @@ export function createWorkflowFixture(options?: { providerStatus?: number; inval
     }
     if (url.includes('/api/v1/images') && init?.method === 'POST') {
       providerCalls.push({ url, body: init.body ? JSON.parse(String(init.body)) : undefined });
-      if (options?.providerStatus === 429) {
-        return new Response(JSON.stringify({ error: 'rate limited' }), { status: 429 });
+      const status = statusQueue.length ? statusQueue.shift()! : 200;
+      if (status !== 200) {
+        return new Response(JSON.stringify({ error: `provider status ${status}` }), { status });
       }
       return new Response(JSON.stringify(providerPayload), {
         status: 200,
