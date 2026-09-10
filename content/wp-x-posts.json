@@ -1,0 +1,28 @@
+{
+  "verified": "2026-09-10",
+  "source": "https://publish.twitter.com/oembed (omit_script=1)",
+  "posts": [
+    {
+      "url": "https://x.com/ChinuKabi/status/2093354955071721498",
+      "author_name": "Chinmay କବି 🇮🇳💙",
+      "author_url": "https://x.com/ChinuKabi",
+      "author_handle": "@ChinuKabi",
+      "date_display": "August 28, 2026",
+      "date_iso": "2026-08-28",
+      "text": "set up windows phone development env, screen record the ui from emulator, extract sizing and curve info, implement it in flutter\n\nmake no mistakes",
+      "media_href": "https://t.co/YVEhRhwLbD",
+      "media_label": "pic.twitter.com/YVEhRhwLbD"
+    },
+    {
+      "url": "https://x.com/ChinuKabi/status/2093585393245655440",
+      "author_name": "Chinmay କବି 🇮🇳💙",
+      "author_url": "https://x.com/ChinuKabi",
+      "author_handle": "@ChinuKabi",
+      "date_display": "August 29, 2026",
+      "date_iso": "2026-08-29",
+      "text": "the route change animations are taking good shape",
+      "media_href": "https://t.co/xSYIKxWNCI",
+      "media_label": "pic.twitter.com/xSYIKxWNCI"
+    }
+  ]
+}

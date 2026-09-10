@@ -1,0 +1,41 @@
+{
+  "name": "sonumerous",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173",
+    "dev:api": "wrangler dev --config wrangler.local.jsonc --port 8791",
+    "test:integration": "SONUMEROUS_INTEGRATION=1 vitest run tests/api.integration.test.ts tests/auth.integration.test.ts",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "types": "wrangler types",
+    "db:local": "wrangler d1 migrations apply sonumerous --local --config wrangler.local.jsonc",
+    "db:remote": "wrangler d1 migrations apply sonumerous --remote",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@radix-ui/react-dialog": "^1.1.23",
+    "hono": "latest",
+    "jose": "latest",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@playwright/test": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "pngjs": "^7.0.0",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest",
+    "wrangler": "latest"
+  }
+}

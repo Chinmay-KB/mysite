@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sonumerous",
+  "account_id": "f18d367b06849a2b95e0fa976becdf41",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": { "directory": "./dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*", "/media/*", "/public/*", "/app/*"] },
+  "routes": [{ "pattern": "sonumerous.chinmaykabi.com", "custom_domain": true }],
+  "observability": { "enabled": true, "traces": { "enabled": true, "head_sampling_rate": 0.1 } },
+  "d1_databases": [{ "binding": "DB", "database_name": "sonumerous", "database_id": "14e6aa40-7c38-4a82-8db3-a81a357af3dc", "migrations_dir": "migrations" }],
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "sonumerous-images" }],
+  "images": { "binding": "IMAGES" },
+  "workflows": [{ "binding": "GENERATE", "name": "sonumerous-generate", "class_name": "GenerationWorkflow" }],
+  "vars": { "ACCESS_DOMAIN": "chinmaykabi.cloudflareaccess.com", "ACCESS_AUD": "6833b6787fe419c3200c64eb17eaacbe4252bf57f9a297d192a779060e377452,24a4831280c18967c95f522a69f0263fdcf32a4b91fc580192d86b93c5186f7d,c267a4210cb0b45eee6d5fe2e0b1e4856e40831dfb7434d039bf43da1c2f5807", "LOCAL_DEV": "false" }
+}

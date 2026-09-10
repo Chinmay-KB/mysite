@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="I'm a man of few means, and a developer of even fewer lines of code.  This is my button    class...">
+<title>Case in point : How Flutter optimizes widget rebuilds and why it used phone number as otp — Chinmay Kabi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../styles.css">
+<noscript><style>.reveal{opacity:1 !important;transform:none !important}.panorama h1 .paint{transform:none !important;animation:none !important}</style></noscript>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23B23716'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='18' font-weight='bold' text-anchor='middle' fill='%23F4EEE1'%3EC%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="glow" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><span id="progress"></span></div>
+<main class="page narrow" id="main">
+  <p class="crumb"><a href="../../">Home</a> / <a href="../">Writing</a></p>
+  <h1 class="pagetitle">Case in point : How Flutter optimizes widget rebuilds and why it used phone number as otp</h1>
+  <p class="bymeta"><time datetime="2021-10-30">2021-10-30</time> <span aria-hidden="true">·</span> <span>#flutter</span> <span>#todayilearned</span> <span aria-hidden="true">·</span> <a href="https://dev.to/chinmaykb/case-in-point-how-flutter-optimizes-widget-rebuilds-and-why-it-used-phone-number-as-otp-3j72" rel="noopener noreferrer">original on dev.to ↗</a></p>
+  <article class="prose"><p>I'm a man of few means, and a developer of even fewer lines of code.</p>
+<p>This is my button</p>
+<pre><code class="language-dart">class CustomButton extends StatelessWidget {
+  const CustomButton({Key? key, required this.title, required this.onTap})
+      : super(key: key);
+
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onTap,
+      child: Text(
+        title,
+      ),
+    );
+  }
+}
+</code></pre>
+<p>This is my textfield</p>
+<pre><code class="language-dart">class CustomTextField extends StatelessWidget {
+  CustomTextField(
+      {Key? key,
+      required this.hintText,
+      this.fillColor = Colors.grey})
+      : super(key: key);
+
+  final String hintText;
+  final Color fillColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: TextFormField(
+        decoration: InputDecoration(
+            hintText: hintText, fillColor: fillColor, filled: true),
+      ),
+    );
+  }
+}
+</code></pre>
+<p>... and this is my login screen with avant garde security</p>
+<pre><code class="language-dart">class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key, required this.title}) : super(key: key);
+
+  final String title;
+
+  @override
+  State&lt;MyHomePage&gt; createState() =&gt; _MyHomePageState();
+}
+
+class _MyHomePageState extends State&lt;MyHomePage&gt; {
+  bool showotp = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          !showotp
+              ? CustomTextField(
+                  hintText: 'Phone number',
+                )
+              : CustomTextField(
+                  hintText: 'OTP',
+                ),
+          !showotp
+              ? CustomButton(
+                  onTap: () =&gt; setState(
+                    () {
+                      showotp = true;
+                    },
+                  ),
+                  title: 'Send OTP',
+                )
+              : CustomButton(
+                  onTap: () =&gt; ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('OTP Submitted'))),
+                  title: 'Verify OTP',
+                )
+        ],
+      ),
+    );
+  }
+}
+</code></pre>
+<p>Looks about fine, right? Go through this gem of a code, and you will have a rough idea of how it will work. You can take it out for a spin on this  <a href="https://dartpad.dartlang.org/?id=93af39f39ed30b55021e2db22b5e4a7f&amp;null_safety=true">dartpad.dev snippet</a>.</p>
+<h3>Something isn't right</h3>
+<p>If you failed to notice, go back and try these steps again. Enter a phone number, press on send otp, and while the textfield changes, the phone number is prefilled in that field. You can see the <code>otp</code> hint text once you clear the prefilled number. But why is this behaviour happening?</p>
+<p><em>Enter Flutter's Sublinear widget tree building</em></p>
+<h2>Sublinear widget building</h2>
+<p>A general adage for Flutter is "It's all widgets". For eg, Padding is not a property of a widget but a widget itself. As a result Flutter has to handle a deeply nested widget tree. Traversing this whole tree the usual way will result in bad performance, so Flutter has some tricks up its sleeve to achieve it in sublinear time.</p>
+<p>One of these tricks is not visiting the tree if the child has not marked itself as dirty(change of state). This tree <strong><em>also</em></strong> holds the state of the widget. Now to find which of the widgets is dirty, a tree diff algorithm would be easier, but not necessarily efficient, so Flutter uses its own algotithm of O(N) complexity. Keep in mind that most layout alsorithms you will find are O(n^2) or worse, and a sublinear algorithm is key to achieve a 60fps render in Flutter</p>
+<blockquote>
+<p>The child list reconciliation algorithm optimizes for the following cases:</p>
+<ul>
+<li>The old child list is empty.</li>
+<li>The two lists are identical.</li>
+<li>There is an insertion or removal of one or more widgets in exactly one place in the list.</li>
+<li>If each list contains a widget with the same key, the two widgets are matched.</li>
+<li>Along with keys, the runtime type is also checked at the same level.</li>
+</ul>
+</blockquote>
+<p>In my case, the runtime type was the same, and because there were no keys assigned to the widgets, they were considered to have the same state. So while the widget is switched because of a simple boolean flag, the state of that widget is not. And thus the state of the old widget is imposed on the new one, because the poor thing could not distinguish one from the other :(</p>
+<p>The easy fix is to pass each of the textfields a unique key!</p>
+<p>Why this felt like a bug to me at first was because we are accustomed to differentiating different objects of same runtime types depending on their instances, and at times by the data they hold. Things get clearer though once we understand why Flutter does the things it does, doesn't it?</p>
+<p><img loading="lazy" alt="Flutter finding the difference between two widgets" src="https://dev-to-uploads.s3.amazonaws.com/uploads/articles/85w2ow264psnj4snzaob.png" /></p>
+<p>If there's something more to it that I might have missed, feel free to chime in the comments!</p></article>
+  <nav class="pageturn" aria-label="More articles"><a href="../advanced-form-handling-with-vanilla-flutter-3e20/" data-magnet>← Advanced form handling with vanilla Flutter</a><a href="../working-with-firebase-database-made-easier-with-withconverter-473n/" data-magnet>Working with Firebase Cloud Firestore made easie →</a></nav>
+</main>
+<footer class="footer">
+  <p>Chinmay Kabi</p>
+  <p><a href="#top" data-magnet>Back to top ↑</a></p>
+</footer>
+<script src="../../app.js" defer></script>
+</body>
+</html>

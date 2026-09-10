@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mysite",
+  "workers_dev": true,
   "compatibility_date": "2026-05-25",
   "observability": {
     "enabled": true
@@ -8,6 +9,10 @@
   "assets": {
     "directory": "."
   },
+  "routes": [
+    { "pattern": "chinmaykabi.com", "custom_domain": true },
+    { "pattern": "www.chinmaykabi.com", "custom_domain": true }
+  ],
   "compatibility_flags": [
     "nodejs_compat"
   ]

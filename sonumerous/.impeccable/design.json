@@ -1,0 +1,28 @@
+{
+  "name": "Sonumerous",
+  "seed": 84503442,
+  "direction": "clean-gallery",
+  "canonOverride": true,
+  "surfaces": {
+    "studio": ".impeccable/surfaces/studio.md"
+  },
+  "tokens": {
+    "paper": "#fcfcfa",
+    "paper-elevated": "#ffffff",
+    "ink": "#171717",
+    "ink-secondary": "#4a4a48",
+    "ink-muted": "#6f6f6b",
+    "line": "#e8e8e4",
+    "line-strong": "#d4d4cf",
+    "accent": "#171717",
+    "accent-soft": "#f3f3ef",
+    "focus": "#2563eb",
+    "favourite": "#b42318",
+    "radius": "12px",
+    "radius-sm": "8px",
+    "sidebar": "15.5rem",
+    "mobile-nav": "4.25rem",
+    "font": "Manrope Variable",
+    "ease-out": "cubic-bezier(0.16, 1, 0.3, 1)"
+  }
+}

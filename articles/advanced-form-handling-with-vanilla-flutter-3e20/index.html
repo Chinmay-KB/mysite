@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Disclaimer: This article goes about implementing features in a highly opinionated manner, which may...">
+<title>Advanced form handling with vanilla Flutter — Chinmay Kabi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../styles.css">
+<noscript><style>.reveal{opacity:1 !important;transform:none !important}.panorama h1 .paint{transform:none !important;animation:none !important}</style></noscript>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23B23716'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='18' font-weight='bold' text-anchor='middle' fill='%23F4EEE1'%3EC%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="glow" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><span id="progress"></span></div>
+<main class="page narrow" id="main">
+  <p class="crumb"><a href="../../">Home</a> / <a href="../">Writing</a></p>
+  <h1 class="pagetitle">Advanced form handling with vanilla Flutter</h1>
+  <p class="bymeta"><time datetime="2022-03-26">2022-03-26</time> <span aria-hidden="true">·</span> <span>#flutter</span> <span>#forms</span> <span>#tutorial</span> <span>#mobile</span> <span aria-hidden="true">·</span> <a href="https://dev.to/chinmaykb/advanced-form-handling-with-vanilla-flutter-3e20" rel="noopener noreferrer">original on dev.to ↗</a></p>
+  <article class="prose"><p>Disclaimer: This article goes about implementing features in a highly opinionated manner, which may not be in line with many of the tutorials out there. So have an open mind and read along! Cheerio :)</p>
+<p>One of the things every front-end developer has to face, regardless of their product type, is to handle form inputs. Designing a form and handling its inputs have never been an exciting prospect for a developer, especially when they have to handle the UI, validation, data on submission, input formatting all at once. Luckily there are some tricks in Flutter we can use to make handling form fills a little 
+bit easier. This article will cover 4 broad aspects of forms</p>
+<ul>
+<li>Prefilling/Storing data</li>
+<li>Input formatting</li>
+<li>Validation</li>
+<li>Custom form field</li>
+</ul>
+<p>For this tutorial we will be making a simple form to create a new profile. This will include text fields to enter name, mobile number, postal code and upload an image. The behavior for each field will be as follows</p>
+<table>
+<thead>
+<tr>
+<th>Text field</th>
+<th>Data type</th>
+<th>Input format</th>
+<th>Validation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name</td>
+<td>String</td>
+<td>Alphabets only</td>
+<td>Name != empty</td>
+</tr>
+<tr>
+<td>Mobile no</td>
+<td>String</td>
+<td>Numbers only</td>
+<td>Length ==10, only numbers</td>
+</tr>
+<tr>
+<td>Profile Image</td>
+<td>File</td>
+<td>Image(jpg, png)</td>
+<td>File !=empty</td>
+</tr>
+</tbody>
+</table>
+<p>Setting up the project</p>
+<p>Let’s create a new flutter proiect and then clean up the <code>main.dart</code> file to the following code below.</p>
+<pre><code class="language-dart">import 'package:flutter/material.dart';
+void main() {
+  runApp(const MyApp());
+}
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    // ignore: prefer_const_constructors
+    return MaterialApp(
+      title: 'Better Flutter Form Demo',
+      home: FormPage(),
+    );
+  }
+}
+class FormPage extends StatelessWidget {
+  FormPage({Key? key}) : super(key: key);
+  final _formKey = GlobalKey&lt;FormState&gt;();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Better Flutter Forms'),
+      ),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [],
+        ),
+      ),
+    );
+  }
+}
+</code></pre>
+<p>It is always a good idea to make the widgets as modular as possible, so we will be making a custom widget which will handle all our text input, a <code>CustomTextField</code>. Create a file <code>custom_text_field.dart</code> and add the following code.</p>
+<pre><code class="language-dart">import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+class CustomTextField extends StatefulWidget {
+  CustomTextField(
+      {Key? key})
+      : super(key: key);
+  @override
+  State&lt;CustomTextField&gt; createState() =&gt; _CustomTextFieldState();
+}
+class _CustomTextFieldState extends State&lt;CustomTextField&gt; {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: TextFormField(),
+    );
+  }
+}
+</code></pre>
+<p>We will go on adding whatever properties we require to our custom widget and use it in the form.</p>
+<h2>Prefilling/Storing data</h2>
+<p>Prefilling text in a textfield or getting current data of a textfield is usually done using a TextEditingController. But this does not scale well when dealing with multiple controllers in a form. A much easier way to deal with flow of data is to use a model class object to handle everything. Let us create a class for our data in this form.</p>
+<pre><code class="language-dart">import 'dart:io';
+class Profile {
+  Profile(
+      {required this.name, required this.phoneNo, required this.profilePic});
+  String? name;
+  String? phoneNo;
+  File? profilePic;
+  Profile copyWith({String? name, String? phoneNo, File? profilePic}) =&gt;
+      Profile(
+          name: name ?? this.name,
+          phoneNo: phoneNo ?? this.phoneNo,
+          profilePic: profilePic ?? this.profilePic);
+}
+</code></pre>
+<p><code>TextFormfield</code> has a built-in property called <code>initialValue</code> which when not null prefills the text field with the data passed. It also has a callback called <code>onChange</code> which is fired everytime user inputs something in the text field. To expose these functioality from our <code>CustomTextField</code>, we add the following properties to it.</p>
+<pre><code class="language-dart">import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+class CustomTextField extends StatefulWidget {
+  CustomTextField(
+      {Key? key,
+      required this.hintText,
+      required this.initialValue,
+      required this.onChanged,})
+      : super(key: key);
+  final String? initialValue;
+  final Function(String) onChanged;
+  final String hintText;
+  @override
+  State&lt;CustomTextField&gt; createState() =&gt; _CustomTextFieldState();
+}
+class _CustomTextFieldState extends State&lt;CustomTextField&gt; {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: TextFormField(
+        initialValue: widget.initialValue,
+        onChanged: widget.onChanged,
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+        ),
+      ),
+    );
+  }
+}
+</code></pre>
+<p>We add the name and phone no fields to our form.</p>
+<pre><code class="language-dart">class FormPage extends StatelessWidget {
+  FormPage({Key? key, Profile? profile})
+      : _profile = profile ?? Profile(),
+        super(key: key);
+  final _formKey = GlobalKey&lt;FormState&gt;();
+  Profile _profile;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Better Flutter Forms'),
+      ),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            CustomTextField(
+              hintText: 'Name',
+              initialValue: _profile.name,
+              onChanged: (value) =&gt; _profile.name = value,
+            ),
+            CustomTextField(
+              hintText: 'Phone No',
+              initialValue: _profile.phoneNo,
+              onChanged: (value) =&gt; _profile.phoneNo = value,
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+</code></pre>
+<p>You can see the data being prefilled in the images below.</p>
+<p><img loading="lazy" alt="All fields filled up" src="https://paper-attachments.dropbox.com/s_2175C51C02237583F97CB6E1427A4F933C233FBE7293BF99F30C98ECF2FF4CF8_1643195136213_image.png" /></p>
+<p><img loading="lazy" alt="None of the fields filled up" src="https://paper-attachments.dropbox.com/s_2175C51C02237583F97CB6E1427A4F933C233FBE7293BF99F30C98ECF2FF4CF8_1643195158675_image.png" /></p>
+<p><img loading="lazy" alt="Available data is prefilled" src="https://paper-attachments.dropbox.com/s_2175C51C02237583F97CB6E1427A4F933C233FBE7293BF99F30C98ECF2FF4CF8_1643195098752_image.png" /></p>
+<p>As seen in the example, the text field will now prefill form data depending on whether it has been passed the data or not, doesn’t matter how many fields there are! Had we used controller for each text field, we would have to take care of each prefill, which does not scale properly. Similarly all the data changes are neatly stored in <code>_profile</code> .</p>
+<h2>Input formatting</h2>
+<p>Taking in improper inputs from a form and processing it can cause a lot of problems. While they can always be checked for before submission, a better UX would be to let the user not make that mistake while entering itself. We use a property called <code>inputFormatters</code> for that. It allows or rejects user input depending on the RegEx pattern we pass it. Another parameter that will come handy is an input length. Let us add these two properties to our <code>CustomTextField</code>. Also while we are at it, let’s add some decoration to make the UI look decent!</p>
+<pre><code class="language-dart">import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+class CustomTextField extends StatefulWidget {
+  CustomTextField(
+      {Key? key,
+      required this.hintText,
+      required this.initialValue,
+      required this.onChanged,
+      this.inputFormatters,
+      this.maxLength})
+      : super(key: key);
+  final String? initialValue;
+  final Function(String) onChanged;
+  final String hintText;
+  final List&lt;TextInputFormatter&gt;? inputFormatters;
+  final int? maxLength;
+
+  @override
+  State&lt;CustomTextField&gt; createState() =&gt; _CustomTextFieldState();
+}
+class _CustomTextFieldState extends State&lt;CustomTextField&gt; {
+  final _borderStyle = OutlineInputBorder(
+      borderSide: const BorderSide(
+        color: Color(0xfffafafa),
+      ),
+      borderRadius: BorderRadius.circular(8));
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: TextFormField(
+        initialValue: widget.initialValue,
+        onChanged: widget.onChanged,
+        maxLength: widget.maxLength,
+        inputFormatters: widget.inputFormatters,
+        validator: widget.validator,
+        decoration: InputDecoration(
+          fillColor: Colors.grey.withOpacity(0.1),
+          filled: true,
+          enabledBorder: _borderStyle,
+          focusedBorder: _borderStyle,
+          hintText: widget.hintText,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        ),
+      ),
+    );
+  }
+}
+</code></pre>
+<p>In case of name, we only want alphabets and space to be allowed. For this we will be using a predefined input formatters called <code>FilteringTextInputFormatter</code>. This has two methods which take in a RegExp as an input, <code>allow()</code> and <code>deny()</code> , which can used depending on your filtering strategy. Here we want to allow only alphabets and spaces, and the RegExp for that is
+<code>[a-zA-Z]+|\s</code> . So we will implement this by passing the following to our name field.</p>
+<pre><code class="language-dart">CustomTextField(
+              hintText: 'Name',
+              initialValue: _profile.name,
+              onChanged: (value) =&gt; _profile.name = value,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r&quot;[a-zA-Z]+|\s&quot;),
+                )
+              ],
+            ),
+</code></pre>
+<p><em>(Note : Writing a string like this, <code>r``"``some string``"</code> means that we are declaring it as a raw string, meaning that they will be treated as the character they are visible. No string interpolations will work inside a raw string and no characters which usually need to be escaped will require escaping anymore, which makes it useful while working with RegExp patterns).</em></p>
+<p>Now when we try typing in our name field, the only input accepted are alphabets and space!</p>
+<p>The same can be applied for number field by using an inbuilt method called <code>FilteringTextInputFormatter.digitsOnly</code>. Also we need to fix the input length in phone field, so we pass a <code>maxLength</code> of 10.</p>
+<h2>Validators</h2>
+<p>These are callbacks fired when a form is validated. These functions receive the latest values in the field, and if any string is returned from these functions, then it is understood that the input in that particular field is invalid, and the string returned is the error text. In our custom widget, we implement a validator. After adding a validator callback, our <code>CustomTextField</code> widget looks like this</p>
+<pre><code class="language-dart">class CustomTextField extends StatefulWidget {
+  CustomTextField(
+      {Key? key,
+      required this.hintText,
+      required this.initialValue,
+      required this.onChanged,
+      this.inputFormatters,
+      this.validator,
+      this.maxLength})
+      : super(key: key);
+  final String? initialValue;
+  final Function(String) onChanged;
+  final String hintText;
+  final List&lt;TextInputFormatter&gt;? inputFormatters;
+  final int? maxLength;
+  final String? Function(String?)? validator;
+  @override
+  State&lt;CustomTextField&gt; createState() =&gt; _CustomTextFieldState();
+}
+class _CustomTextFieldState extends State&lt;CustomTextField&gt; {
+  final _focusNode = FocusNode();
+  final _borderStyle = OutlineInputBorder(
+      borderSide: const BorderSide(
+        color: Color(0xfffafafa),
+      ),
+      borderRadius: BorderRadius.circular(8));
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: TextFormField(
+        initialValue: widget.initialValue,
+        onChanged: widget.onChanged,
+        maxLength: widget.maxLength,
+        inputFormatters: widget.inputFormatters,
+        validator: widget.validator,
+        decoration: InputDecoration(
+          fillColor: Colors.grey.withOpacity(0.1),
+          filled: true,
+          enabledBorder: _borderStyle,
+          focusedBorder: _borderStyle,
+          hintText: widget.hintText,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        ),
+      ),
+    );
+  }
+}
+</code></pre>
+<p>In the name field, we can check for validity in the following manner</p>
+<pre><code class="language-dart">CustomTextField(
+              hintText: 'Name',
+              initialValue: _profile.name,
+              onChanged: (value) =&gt; _profile.name = value,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r&quot;[a-zA-Z]+|\s&quot;),
+                )
+              ],
+              validator: (val) {
+                if (val == null || val.isEmpty) {
+                  return 'Enter a valid String';
+                }
+              },
+            ),
+</code></pre>
+<p>When no error message is returned from the validator function, it means the input is valid.</p>
+<div class="embed"><iframe src="https://www.youtube-nocookie.com/embed/CAHg1xp7DvA" title="Embedded video" loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+
+<p>While validation is working fine here, but here we have to press the submit button for validation to kick in. What if a user has not typed their full phone number and moved to type their name, the error message should pop up right then to complete the number, that would be good UX too! For that we have a property called <code>autoValidateMode</code> in the <code>TextFormField</code>. Setting it to <code>autovalidateMode: AutovalidateMode.onUserInteraction</code> means that validation for a field will kick in the moment user changes their focus to any other field.</p>
+<p><img loading="lazy" alt="Autovalidate mode in action" src="https://www.dropbox.com/s/xqclucrraxzmtk4/Screen%20Recording%202022-01-27%20at%201.02.22%20AM.gif?dl=0" /></p>
+<p>Something’s wrong here, right? Validation fires up on user interaction, just how its name suggests, but we want it to fire once user focuses on another field. For that we will be using a <code>FocusNode</code>. We declare a <code>FocusNode</code> object inside the <code>CustomTextField</code> and assign it to the <code>TextFormField</code>. Now all we have to do is disable the validator when the field is in focus. We also will have to call <code>setState()</code> when focus changes, otherwise the error message won’t be shown on focus change by itself.</p>
+<pre><code class="language-dart">class CustomTextField extends StatefulWidget {
+  CustomTextField(
+      {Key? key,
+      required this.hintText,
+      required this.initialValue,
+      required this.onChanged,
+      this.inputFormatters,
+      this.validator,
+      this.maxLength})
+      : super(key: key);
+  final String? initialValue;
+  final Function(String) onChanged;
+  final String hintText;
+  final List&lt;TextInputFormatter&gt;? inputFormatters;
+  final int? maxLength;
+  final String? Function(String?)? validator;
+  @override
+  State&lt;CustomTextField&gt; createState() =&gt; _CustomTextFieldState();
+}
+class _CustomTextFieldState extends State&lt;CustomTextField&gt; {
+  final _focusNode = FocusNode();
+  final _borderStyle = OutlineInputBorder(
+      borderSide: const BorderSide(
+        color: Color(0xfffafafa),
+      ),
+      borderRadius: BorderRadius.circular(8));
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) setState(() {});
+    });
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: TextFormField(
+        focusNode: _focusNode,
+        initialValue: widget.initialValue,
+        onChanged: widget.onChanged,
+        maxLength: widget.maxLength,
+        inputFormatters: widget.inputFormatters,
+        validator: (value) {
+          if (_focusNode.hasFocus) {
+            return null;
+          } else {
+            return widget.validator?.call(value);
+          }
+        },
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        decoration: InputDecoration(
+          fillColor: Colors.grey.withOpacity(0.1),
+          filled: true,
+          enabledBorder: _borderStyle,
+          focusedBorder: _borderStyle,
+          hintText: widget.hintText,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        ),
+      ),
+    );
+  }
+}
+</code></pre>
+<div class="embed"><iframe src="https://www.youtube-nocookie.com/embed/mc4d51iejeU" title="Embedded video" loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+<p>Now that looks like polished UX, with just a few lines of code! This behavior will be default for all <code>CustomTextField</code> widgets.</p>
+<h3>Custom Form field</h3>
+<p>What makes a form widget differentiate from other widget is the data validation part. Usually developers may tend to take the easy route and validate any custom field separately, for eg - an image upload field, but that would not scale in case of a complex form. We will be making our own <code>CustomImageFormField</code>! Create a <code>custom_image_form_field.dart</code> and add the following code.</p>
+<pre><code class="language-dart">import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+class CustomImageFormField extends StatelessWidget {
+  CustomImageFormField({
+    Key? key,
+    required this.initialValue,
+    required this.validator,
+    required this.onPicked,
+  }) : super(key: key);
+  final File? initialValue;
+  final String? Function(File?) validator;
+  final Function(File) onPicked;
+  File? _pickedFile;
+  @override
+  Widget build(BuildContext context) {
+    return FormField(
+        initialValue: initialValue,
+        validator: (_) =&gt; validator.call(_pickedFile),
+        builder: (formFieldState) {
+          return Column(
+            children: [
+              GestureDetector(
+                onTap: () async {
+                  FilePickerResult? file = await FilePicker.platform
+                      .pickFiles(type: FileType.image, allowMultiple: false);
+                  if (file != null) {
+                    _pickedFile = File(file.files.first.path!);
+                    onPicked.call(_pickedFile!);
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xff707070).withOpacity(0.1),
+                  ),
+                  child: Column(
+                    children: const [
+                      Icon(Icons.upload_file),
+                      Text('Upload profile picture')
+                    ],
+                  ),
+                ),
+              ),
+              if (formFieldState.hasError)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 10),
+                  child: Text(
+                    formFieldState.errorText!,
+                    style: TextStyle(
+                        fontStyle: FontStyle.normal,
+                        fontSize: 13,
+                        color: Colors.red[700],
+                        height: 0.5),
+                  ),
+                )
+            ],
+          );
+        });
+  }
+}
+</code></pre>
+<p>To make our own form field, we can design the UI in any way we want and justwrap it in a <code>FormField</code>. It has all the usual properties like validator and initial value. To pick up image, <code>file_picker</code> package was used. Depending on whether this field has an error or not, a widget is conditionally shown. Now when we make a bad submission, we get this kind of error.</p>
+<p><img loading="lazy" alt="" src="https://paper-attachments.dropbox.com/s_2175C51C02237583F97CB6E1427A4F933C233FBE7293BF99F30C98ECF2FF4CF8_1643229176867_image.png" /></p>
+<p><code>FormField</code> widget can be used to make form fields for a variety of uncommon inputs like file picker, date picker, radio buttons etc.
+If we pass the <code>Profile</code> object in which we have saved all data to another screen and display the data, we see the following.</p>
+<div class="embed"><iframe src="https://www.youtube-nocookie.com/embed/Sdtg7OLEKvc" title="Embedded video" loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+
+<p>In this tutorial we learnt about how to handle prefilling and saving data, formatting our inputs, validating with a good UX flow, and making our own form field, all without using any third party form handling packages. All these things, when coupled together are enough to handle most of the forms.</p></article>
+  <nav class="pageturn" aria-label="More articles"><a href="../case-in-point-how-flutter-optimizes-widget-rebuilds-and-why-it-used-phone-number-as-otp-3j72/" data-magnet>Case in point : How Flutter optimizes widget reb →</a></nav>
+</main>
+<footer class="footer">
+  <p>Chinmay Kabi</p>
+  <p><a href="#top" data-magnet>Back to top ↑</a></p>
+</footer>
+<script src="../../app.js" defer></script>
+</body>
+</html>

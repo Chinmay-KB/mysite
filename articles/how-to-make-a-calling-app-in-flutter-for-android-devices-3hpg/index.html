@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Disclaimer- That ! in the title is not a typo, read it as not. This article is not a tutorial about...">
+<title>How !to make a calling app in Flutter for Android devices — Chinmay Kabi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../styles.css">
+<noscript><style>.reveal{opacity:1 !important;transform:none !important}.panorama h1 .paint{transform:none !important;animation:none !important}</style></noscript>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23B23716'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='18' font-weight='bold' text-anchor='middle' fill='%23F4EEE1'%3EC%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="glow" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><span id="progress"></span></div>
+<main class="page narrow" id="main">
+  <p class="crumb"><a href="../../">Home</a> / <a href="../">Writing</a></p>
+  <h1 class="pagetitle">How !to make a calling app in Flutter for Android devices</h1>
+  <p class="bymeta"><time datetime="2021-06-14">2021-06-14</time> <span aria-hidden="true">·</span> <span>#flutter</span> <span>#android</span> <span>#plugin</span> <span>#hack</span> <span aria-hidden="true">·</span> <a href="https://dev.to/chinmaykb/how-to-make-a-calling-app-in-flutter-for-android-devices-3hpg" rel="noopener noreferrer">original on dev.to ↗</a></p>
+  <article class="prose"><p><em>Disclaimer- That <code>!</code> in the title is not a typo, read it as <code>not</code>. This article is not a tutorial about how to make a whatsapp or skype type calling app, rather it is an article about how I fell short of making such an app using flutter.</em></p>
+<p>I have been trying to make a voice calling app using Flutter. You will find many articles and videos about how easy peasy it is to integrate Twilio or Agora into a flutter app, but I could not find one resource which dived deep into making a true calling app in Flutter. What do I mean by <strong><em>true calling app</em></strong> ?</p>
+<h2>What a true calling app should have</h2>
+<p><img loading="lazy" alt="On receiving data notification for call" src="https://i.ibb.co/jVwkGQk/mermaid-diagram-20210614214920.png" /></p>
+<p style="text-align: center;"> On receiving data notification for call </p>
+
+<ul>
+<li>The app should work even when it is in background, or terminated even.</li>
+<li>The app should work over a keyguard(i.e- the lockscreen)</li>
+<li>If the user is using the phone, a <a href="https://developer.android.com/training/notify-user/time-sensitive">time sensitive notification</a> should pop up.</li>
+<li>When accepted, this should launch into its own UI, where you see the call details like caller id, duration etc.</li>
+<li>This notification should be a full screen notificaion so that we can see the call interface when the device is locked and not in use.</li>
+<li>During a call, when the user presses the back button, there should be a notification of a foreground service, which shows the info about ongoing call, and has options for disconnecting.</li>
+<li>We can use either the inbuilt calling app, or we can implement our own screen for incoming/outgoing calls and for call in progress.</li>
+<li>I wanted to build it without writing any platform specific code, or just the least amount of code.</li>
+</ul>
+<h2>Building the app</h2>
+<p>I am using the <a href="https://pub.dev/packages/agora_rtc_engine">agora_rtc_engine</a> plugin for making voice calls. You can find a tutorial on their <a href="https://docs.agora.io/en/Voice/start_call_audio_flutter?platform=Flutter">official docs here</a>. If we implement just what the tutorial says, we will be joining a voice channel as soon as we launch the app, and anyone having the same app can speak into and listen to this voice call.</p>
+<p>So the voice call part is taken care of pretty easily. Now for how to get the behaviour of getting an actual phone call(getting a Caller ID screen, an accept/reject screen).</p>
+<h3>Take #1</h3>
+<p>I set up a FCM in flutter to receive data messages. You can read about difference between notification messages and data messages in my <a href="https://stackoverflow.com/a/67968481/14371894">stackoverflow answer here</a>. I went with data messages because I wanted to be in control of the notification I generate.</p>
+<p>My next plan was to use <a href="https://pub.dev/packages/flutter_local_notifications#custom-notification-icons-and-sounds">flutter_local_notifications</a> plugin and generate a notification. This plugin also has a full screen intent option, which when set to true can show your app when when phone is locked. But there are certain properties the notification should have.So I would listen to a data message, in both foreground and background/terminated state. Upon receiving one, I will generate a notification with full screen intent as true.</p>
+<h4>Properties of the notification</h4>
+<ul>
+<li>
+<p>They should be non dismissable by swipe action. Only way it is dismissed if the ring is over or the user rejects the call.</p>
+</li>
+<li>
+<p>The notification should have accept and reject buttons. Depending on the response, we should open either the ongoing call UI or reject the call.</p>
+</li>
+<li>
+<p>There should be a non dismissable notification during the call, which will show some options like mute, disconnect, etc, along with caller id, duration etc.</p>
+</li>
+</ul>
+<h4>The fault in our notifications</h4>
+<ul>
+<li>
+<p><code>flutter_local_notifications</code> does not have any solution for time sensitive notifications.</p>
+</li>
+<li>
+<p>It also does not have any solution for having action buttons in the notification</p>
+</li>
+<li>
+<p><code>awesome_notifications</code> has a solution for action button, but no solution for time sensitive notification.</p>
+</li>
+<li>
+<p>It also does not support full screen notifications.</p>
+</li>
+</ul>
+<p><img loading="lazy" alt="Always has been eh" src="https://i.imgflip.com/5d8f0n.jpg" /></p>
+<p style="text-align: center;"> Always has been eh? </p>
+
+<p>Navigating to a particular screen upon tapping the notification is rather easy, as there are callbacks available for times when the app has been opened due to a notification. For this though you need to use a notificaication message, in which the notification will be handled directly by the plugin. If you want to implement it in data messages, you will have to write some platform dependent code as well.</p>
+<h3>Take #2</h3>
+<p>I tried handling the incoming calls like a gentleman!
+Upon further digging I found out that apps like Whatsapp, Skype, Insta, Zoom etc handle incoming calls and outgoing calls using something called <a href="https://developer.apple.com/documentation/callkit">callkit in iOS</a> and <a href="https://developer.android.com/reference/android/telecom/ConnectionService">ConnectionService in Android</a>. Plugins already exist for this in flutter, namely <a href="https://pub.dev/packages/callkeep">callkeep</a> and <a href="https://pub.dev/packages/callkeep">flutter_callkeep</a>. </p>
+<p>These plugins, when asked to show a call, mimic the exact behavior as a normal telecom call would, using the same notifications, showing the same UI. Each interaction, like accepting a call, rejecting a call, toggling loudspeaker, holding a call etc all have their callbacks. Seems pretty straightforward, right?</p>
+<h4>Callkeep couldn't keep up</h4>
+<p>There is a bug in both the packages.</p>
+<ul>
+<li>
+<p>When you start a call, and reject a call then everything works fine.</p>
+</li>
+<li>
+<p>When you accept the call though, the Call UI hangs all of a sudden. Fron the logs it seems like it is starting a lot of calls internally, and they all clash with each other.</p>
+</li>
+</ul>
+<p>The plugins are still a bit usable in Android Pie, but completely unusable in Android 10.</p>
+<p><img loading="lazy" alt="Why are we here, just to suffer?" src="https://i.imgflip.com/5d8fkt.jpg" /></p>
+<p style="text-align: center;"> Why are we here, just to suffer? </p>
+
+<h3>Take #3</h3>
+<p>A hacky solution (platform side code included).</p>
+<p>Our pain problem with notification is that we can't have action buttons + time sensitive + full screen notifications together. We can all compensate for this by generating our own notification using <a href="https://flutter.dev/docs/development/platform-integration/platform-channels">platform channel</a>.</p>
+<h4>The plan</h4>
+<ul>
+<li>
+<p>Write a function that can generate a notification of our requirements, a good example is <a href="https://developer.android.com/training/notify-user/time-sensitive">time sensitive notification</a> example here.</p>
+</li>
+<li>
+<p>You can assign a pending intent to this intent for full screen notification. Flutter apps have only one activity. To get the reference to this activity, you can follow this snippet.</p>
+</li>
+</ul>
+<pre><code class="language-java">    /// This code snippet is taken from flutter_local_notification plugin
+    private static Intent getLaunchIntent(Context context) {
+        String packageName = context.getPackageName();
+        PackageManager packageManager = context.getPackageManager();
+        return packageManager.getLaunchIntentForPackage(packageName);
+    }
+</code></pre>
+<ul>
+<li>
+<p>Open <code>MainActivity</code> as soon as the user either taps on the notification or accepts the call.</p>
+</li>
+<li>
+<p>Check whether the app was called because of a notification tap by invoking some MethodChannel right as the app starts. Depending on the result, you can either navigate to the app as usual or to the Call UI screen.</p>
+</li>
+<li>
+<p>If you find it difficult to determine if the app was started from a notification or not, using something like Shared Preferences. Store a key-value pair signifying that app was started in notification inside the BroadcastListener. Once the app has launched and a MethodChannel is involed asking whether app was launched from notification, reset it. P.S- This is a hacky solution, better solutions exist.</p>
+</li>
+<li>
+<p>As soon as the app is launched, spawn another service, this time a <a href="https://developer.android.com/guide/components/foreground-services">foreground service</a>. Every foreground service <strong>MUST</strong> have a notification associated with it. We can use this notification to signify an ongoing call, regardless of whether is in the app or outside it. This service runs until the user has disconnected the call.</p>
+</li>
+</ul>
+<p><img loading="lazy" alt="Same energy as our solution" src="https://i.imgflip.com/5d8aqg.jpg" /></p>
+<p style="text-align: center;"> Same energy as our solution</p>
+
+<h3>Take #4</h3>
+<p>What I feel is the legit solution!</p>
+<p>Previously in the article I mentioned something about <a href="https://developer.android.com/reference/android/telecom/ConnectionService">ConnectionService</a>. This is the recommended way for any app that either</p>
+<ul>
+<li>
+<p>Can make phone calls (VoIP or otherwise) and want those calls to be integrated into the built-in phone app. Referred to as a <em>system managed</em> ConnectionService.</p>
+</li>
+<li>
+<p>Are a standalone calling app and don't want their calls to be integrated into the built-in phone app. Referred to as a <em>self managed</em> ConnectionService.</p>
+</li>
+</ul>
+<p>What both <code>callkeep</code> and <code>flutter_callkeep</code> plugins offered is system managed ConnectionService. What we need is self managed. The main issue here is resources, or lack thereof. The only resource I could find is <a href="https://developer.android.com/guide/topics/connectivity/telecom/selfManaged#no-active">this guide</a>. There are not any tutorials/blogs about how to implement this. We can learn how to implement this by looking at some existing projects though, a good point is <a href="https://github.com/AgoraIO-Usecase/Video-Calling">AgoraIO-Usercase/Video-Calling</a> repository.</p>
+<p>Getting this functionality all wrapped in a flutter plugin is the best solution we can manage with flutter in my opinion. What I believe personally though is that implementing it in native is the easiest way out. That way we do not have to worry about handling communication between native android and flutter.</p>
+<blockquote>
+<p><em>Flutter is a cross-platform UI toolkit that is designed to allow code reuse across operating systems such as iOS and Android, while also 
+allowing applications to interface directly with underlying platform 
+services</em>. - <a href="https://flutter.dev/docs/resources/architectural-overview">Flutter architectural overview</a></p>
+</blockquote>
+<p>Google considers Flutter as a UI toolkit, and personally so do I. Sometimes we may have to implement some framework level functionalities(like handling telephony in this case) just so that we can show a call accept/reject screen in flutter. This can be pretty straightforward in native android. So the question lies with the developer, <em>is it worth the effort?</em></p>
+<p><img loading="lazy" alt="'tis complicated" src="https://i.imgflip.com/5d8e1w.jpg" /></p>
+<p>P.S - This article is everything I could find and make sense of while researching about this for 3 days straight. I decided to write this article because there are a lot of people on StackOverflow and Github Issues who do not have an answer to this question. While I have not been able to provide an answer, yet, I hope to make the question clearer.</p>
+<p>I am not a pro developer, so if you find any discrepancies, feel free to comment, the whole point of this article to bring whatever little exists about this on the internet at a single place! Also, I'll be working on the plugin myself, I'll be updating the article with a link to the repo in some days.</p></article>
+  <nav class="pageturn" aria-label="More articles"><a href="../working-with-firebase-database-made-easier-with-withconverter-473n/" data-magnet>← Working with Firebase Cloud Firestore made easie</a><a href="../project-spampr-the-hero-that-tried-saving-hacktoberfest-20-1ddd/" data-magnet>project-spampr: The hero that tried saving hackt →</a></nav>
+</main>
+<footer class="footer">
+  <p>Chinmay Kabi</p>
+  <p><a href="#top" data-magnet>Back to top ↑</a></p>
+</footer>
+<script src="../../app.js" defer></script>
+</body>
+</html>

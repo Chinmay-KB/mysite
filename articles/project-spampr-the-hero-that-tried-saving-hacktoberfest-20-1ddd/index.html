@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Eh ! It\u2019s the thoughts that matter, right?  For those who are still using Internet Explorer, Hacktobe...">
+<title>project-spampr: The hero that tried saving hacktoberfest &#x27;20 — Chinmay Kabi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../styles.css">
+<noscript><style>.reveal{opacity:1 !important;transform:none !important}.panorama h1 .paint{transform:none !important;animation:none !important}</style></noscript>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23B23716'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='18' font-weight='bold' text-anchor='middle' fill='%23F4EEE1'%3EC%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="glow" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><span id="progress"></span></div>
+<main class="page narrow" id="main">
+  <p class="crumb"><a href="../../">Home</a> / <a href="../">Writing</a></p>
+  <h1 class="pagetitle">project-spampr: The hero that tried saving hacktoberfest &#x27;20</h1>
+  <p class="bymeta"><time datetime="2020-10-09">2020-10-09</time> <span aria-hidden="true">·</span> <span>#hacktoberfest</span> <span>#github</span> <span>#opensource</span> <span aria-hidden="true">·</span> <a href="https://dev.to/chinmaykb/project-spampr-the-hero-that-tried-saving-hacktoberfest-20-1ddd" rel="noopener noreferrer">original on dev.to ↗</a></p>
+  <article class="prose"><p><em>Eh ! It’s the thoughts that matter, right?</em></p>
+<p>For those who are still using Internet Explorer, Hacktoberfest is Digital Ocean’s annual month long celebration of Open Source community and contributions. Digital Ocean ships a T- shirt and stickers to the first 70,000 people who successfully open 4 pull requests to any public repository. At least that’s what it was for the past seven years until October 2nd 2020.</p>
+<p>This year, things went tits up when a barrage of noobs bombarded public repositories with spammy pull requests. Some of the jewels being…</p>
+<p><img loading="lazy" alt="EjV2jnXUYAEobB-" src="https://dev-to-uploads.s3.amazonaws.com/i/bjvo6cqoucjery2o33z7.jpeg" /></p>
+<p>It was a maintainer’s worst nightmare come true, like a Github version of Denial of Service attack!. They had to reject those PRs, close them, label them invalid manually to prevent overcrowding. Within a day of Hacktoberfest, it had drawn massive flak for the mess it had caused. I have taken part in Hacktoberfest for the last 2 years, and the T shirts are very dear to me. If they were to be doled out for trash pull requests, then it would reduce the value of the T shirts the legitimate contributors had earned. So in the morning of 2nd October, I set out to restore the balance of the open source universe, all by myself…</p>
+<h3>The gameplan</h3>
+<ol>
+<li>Make a Github bot.</li>
+<li>Find out a way to screen spammy PRs</li>
+<li>Get it out ASAP !!! </li>
+</ol>
+<h3>The problems</h3>
+<ol>
+<li>I didn’t know the difference between a github action and a github bot, let alone how they work.</li>
+<li>I believe JS should not exist on the face of this Earth, and now I had to code in JS.</li>
+<li>I don’t know JS.</li>
+<li>Webhooks what?</li>
+</ol>
+<h3>Good Luck and Godspeed…</h3>
+<p>I don’t know if it was my ignorance or lack of familiarity with JS, but I could hardly find any good documentation for a beginner testing waters in github app. Many of the tutorials I looked into were about Github actions(which I still don’t understand). It took me an hour or so before I found something called Probot .</p>
+<p><img loading="lazy" alt="0_CI-CCyBzOLe4AHAi" src="https://dev-to-uploads.s3.amazonaws.com/i/35e58rwhxk2oerse396j.png" /></p>
+<p>It is a nice little Node JS module that actually did a lot of heavylifting. We can create a probot app scaffold using npm. It generates all the required files, along with a hello world program which you can start tweaking to understand how things work. To get it working, you need to have installed Node.js. Then you can create the basic scaffold using this.</p>
+<p><img loading="lazy" alt="0_BMUqdJbNN7kajYbs" src="https://dev-to-uploads.s3.amazonaws.com/i/9ydcpxx0hdp2dq18eape.png" /></p>
+<p>We see a bunch of files being generated, one of them being index.js
+(This is all the code that’s in there !)</p>
+<p>The only thing to understand here is how webhooks and context works. Webhooks are continuously listening for any events on the other end. In the above code, it is listening to “issues.opened” event. </p>
+<p>Next comes what context is and how it works. Context is just an awesome abstraction of all the data payload you receive from any event and a gateway to make API requests without having to write any code for API requests. Context has a lot of things that you can access through it. You can find a lost of it here . What I used in this case are the following.</p>
+<p><img loading="lazy" alt="carbon (2)" src="https://dev-to-uploads.s3.amazonaws.com/i/yiny9tuiy8xzxvfu4gh6.png" /></p>
+<p>If the webhook receives a trigger due to a pull request, it will receive data only for a pull request in the context, we don’t have to worry about it. Similarly for issues opening closing and other such events. So context.payload contains all the data we may need. Next if we want to post a comment, or publish a label to a PR or an issue, we can use context.github. One thing to note here is Pull Requests are to be treated as Issues when doing stuff common to both, for eg- commenting, labelling, assigning etc. I realised it the hard way after struggling for an hour or two. So I now had to comment on the PR opened, so I treated it like an issue and it worked!!</p>
+<p>Next comes labels. It is the same as labels to be added to issues! Easy right?
+<img loading="lazy" alt="carbon (3)" src="https://dev-to-uploads.s3.amazonaws.com/i/8il17ij01eaxzpnu0nr1.png" /></p>
+<p>One major thing to note here is you won’t find Probot documentation explaining in a lot of detail. You can see the parallel between this context and Octokit though. Do have a look at it though. Had I known that Probot uses Octokit under the hood, and commenting on PR has to be done the same way as issues, things would be over in an hour.</p>
+<blockquote>
+<p>I wasted time so that you don’t have to.</p>
+</blockquote>
+<h3>Who’s been naughty in PRs?</h3>
+<p><em>Assumptions were made...</em></p>
+<p>In a fairly active repository, the workflow usually is
+1. An issue is opened by maintainers. Interested person interacts with maintainers and gets himself/herself assigned to the issue.
+2. If there exists no issue related to the thing someone wants to contribute, they can open one. The flow is then similar to previous point.</p>
+<p>The assumptions made were that
+1. If someone has not been assigned an issue before, it means they are not entrusted with contributing to the repository by the maintainers.
+2. If someone is assigned to any of the open issues, then the maintainers believe that the contributor is genuine and would make genuine contributions, regardless of which issue they end up sending a PR about.</p>
+<p>Have a look at this video, you’ll understand better!</p>
+<div class="embed"><iframe src="https://www.youtube-nocookie.com/embed/0dgPtYPgGP0" title="Embedded video" loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+
+<p>This was easy to achieve. 
+1. Get a list of all issues on a repository using a public API. For eg https://api.github.com/repos/Chinmay-KB/project-spampr/issues?state=open
+2. Get a list of all the assignees to all open issues.
+3. See if the username who opened the PR has any of the issues assigned to them.
+4. If they are assigned, label the PR as approved, if not send a “personalized” comment out to them.</p>
+<p><img loading="lazy" alt="Screenshot from 2020-10-09 16-46-25" src="https://dev-to-uploads.s3.amazonaws.com/i/oizzi88e888bzvz4y7uu.png" /></p>
+<p>That’s as easy as it gets, right?</p>
+<p>After that run npm start and the app is running on localhost already!</p>
+<p>And here you are, ready to fight spammy PR, one repo at a time. For a few hours at least.
+Digital Ocean declared that as of October 3, Hacktoberfest is an opt-in program for repositories. Now not just any PR would be counted as a legit contribution. Either the repository needs to have the hacktoberfest topic or the pull requests should have hacktoberfest-approved labels assigned to them to be counted as a legitimate PR. Sway of the mighty hand you see!</p>
+<p>It was good learning for me though, from knowing nothing about Github bots to having deployed one on Heroku, all within 12 hours is quite a learning ! The bot never gained any traction, neither in the MLH hackathon I submitted this or the tweets I had sent out to MLH and Digital Ocean :( </p>
+<blockquote class="embed-note"><p>A tweet referenced in the original post — <a href="https://twitter.com/i/status/1312644547369938944" rel="noopener noreferrer">view it on X</a>.</p></blockquote>
+<p>But there’s nothing like learning by doing, right?</p>
+<p>Github repo <a href="https://github.com/Chinmay-KB/project-spampr">here</a>
+This project was submitted to MLH Hero Hacks <a href="https://devpost.com/software/project-spampr?ref_content=user-portfolio&amp;ref_feature=in_progress">Devpost link</a></p></article>
+  <nav class="pageturn" aria-label="More articles"><a href="../how-to-make-a-calling-app-in-flutter-for-android-devices-3hpg/" data-magnet>← How !to make a calling app in Flutter for Androi</a></nav>
+</main>
+<footer class="footer">
+  <p>Chinmay Kabi</p>
+  <p><a href="#top" data-magnet>Back to top ↑</a></p>
+</footer>
+<script src="../../app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sonumerous-local",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "directory": "./dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*", "/media/*", "/public/*", "/app/*"] },
+  "d1_databases": [{ "binding": "DB", "database_name": "sonumerous", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }],
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "sonumerous-images" }],
+  "images": { "binding": "IMAGES" },
+  "workflows": [{ "binding": "GENERATE", "name": "sonumerous-local-generate", "class_name": "GenerationWorkflow" }],
+  "vars": { "ACCESS_DOMAIN": "", "ACCESS_AUD": "", "LOCAL_DEV": "true" }
+}

@@ -1,0 +1,16 @@
+# Keep git internals, wrangler state, and OS junk out of public assets
+.git
+.gitignore
+.wrangler
+.dev.vars*
+.env*
+.DS_Store
+node_modules
+# Build sources, not pages
+.impeccable
+PRODUCT.md
+content
+build.py
+*.md
+# Independently deployed image studio
+sonumerous
