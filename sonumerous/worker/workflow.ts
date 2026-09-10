@@ -28,7 +28,11 @@ export class GenerationWorkflow extends WorkflowEntrypoint<AppEnv, GenerationPar
         if (!claim.meta.changes) throw new Error('The previous request was interrupted. Start a new variation to try again.');
         const input = snapshot.input;
         const endpointResponse = await fetch(`https://openrouter.ai/api/v1/images/models/${input.model}/endpoints`, { signal: AbortSignal.timeout(20000) });
-        if (!endpointResponse.ok) throw new Error('The selected model is temporarily unavailable. Try another model.');
+        if (!endpointResponse.ok) {
+          console.log(JSON.stringify({ event: 'openrouter_endpoints_status', generationId, model: input.model, status: endpointResponse.status }));
+          await endpointResponse.body?.cancel();
+          throw new Error('The selected model is temporarily unavailable. Try another model.');
+        }
         const endpointData = JSON.parse(new TextDecoder().decode(await boundedBytes(endpointResponse.body, 1024*1024))) as {endpoints: {provider_tag: string | null; supported_parameters: Record<string,{values?: string[];max?:number}>}[]};
         const endpoint = endpointData.endpoints.find(e => {
           if (!e.provider_tag) return false;
@@ -67,8 +71,11 @@ export class GenerationWorkflow extends WorkflowEntrypoint<AppEnv, GenerationPar
           body:JSON.stringify(requestBody),
         });
         if (!response.ok) {
+          // Log only the status (never headers, body, or credentials) so the
+          // owner can tell a rejected key (401) from an empty account (402).
+          console.log(JSON.stringify({ event: 'openrouter_images_status', generationId, model: input.model, provider: endpoint.provider_tag, status: response.status }));
           await response.body?.cancel();
-          throw new Error(response.status === 429 ? 'The image model is busy. Try again in a little while.' : response.status === 401 || response.status === 402 ? 'The image connection needs attention from the studio owner.' : 'The model could not complete this image. Try another prompt or model.');
+          throw new Error(response.status === 429 ? 'The image model is busy. Try again in a little while.' : response.status === 401 ? 'The studio image key was rejected. The owner needs to store a valid key.' : response.status === 402 ? 'The studio image account is out of credit. The owner needs to top it up.' : 'The model could not complete this image. Try another prompt or model.');
         }
         // Store the bounded provider response before further processing. Subsequent steps never regenerate it.
         const bytes = await boundedBytes(response.body, 24 * 1024 * 1024);
