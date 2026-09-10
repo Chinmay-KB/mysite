@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('unauthenticated visitors can use the public landing', async ({ page }) => {
-  await page.route('**/api/public/themes', route => route.fulfill({
+  await page.route('**/public/themes', route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify([
@@ -25,7 +25,7 @@ test('unauthenticated visitors can use the public landing', async ({ page }) => 
 });
 
 test('public theme metadata is available without identity', async ({ request }) => {
-  const response = await request.get('/api/public/themes');
+  const response = await request.get('/public/themes');
 
   expect(response.status()).toBe(200);
   const themes = await response.json() as { slug: string; name: string; description: string; coverUrl: string }[];

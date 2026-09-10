@@ -14,5 +14,5 @@
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "sonumerous-images" }],
   "images": { "binding": "IMAGES" },
   "workflows": [{ "binding": "GENERATE", "name": "sonumerous-generate", "class_name": "GenerationWorkflow" }],
-  "vars": { "ACCESS_DOMAIN": "chinmaykabi.cloudflareaccess.com", "ACCESS_AUD": "6833b6787fe419c3200c64eb17eaacbe4252bf57f9a297d192a779060e377452,24a4831280c18967c95f522a69f0263fdcf32a4b91fc580192d86b93c5186f7d,c267a4210cb0b45eee6d5fe2e0b1e4856e40831dfb7434d039bf43da1c2f5807", "LOCAL_DEV": "false" }
+  "vars": { "ACCESS_DOMAIN": "chinmaykabi.cloudflareaccess.com", "ACCESS_AUD": "6833b6787fe419c3200c64eb17eaacbe4252bf57f9a297d192a779060e377452", "LOCAL_DEV": "false" }
 }

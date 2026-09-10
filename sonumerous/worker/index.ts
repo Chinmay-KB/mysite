@@ -38,7 +38,7 @@ app.use('*', async (c, next) => {
   }
   await next();
 });
-app.get('/api/public/themes', async c => {
+async function publicThemes(c: { env: AppEnv; header: (name: string, value: string) => void; json: (data: unknown) => Response | Promise<Response> }) {
   const rows = (await c.env.DB.prepare(
     "SELECT id,name,description FROM themes WHERE scope='global' AND hidden=0 ORDER BY rowid",
   ).all<Pick<Theme, 'id' | 'name' | 'description'>>()).results;
@@ -50,7 +50,13 @@ app.get('/api/public/themes', async c => {
   }));
   c.header('Cache-Control', 'public, max-age=300, s-maxage=600');
   return c.json(themes);
-});
+}
+
+// Public catalogue for the logged-out landing page. It lives outside /api/*
+// (and outside Access protection) so anonymous visitors can see templates.
+app.get('/public/themes', async c => publicThemes(c));
+// Backwards-compatible alias for authenticated callers.
+app.get('/api/public/themes', async c => publicThemes(c));
 
 app.get('/public/covers/:slug', async c => {
   const slug = c.req.param('slug');

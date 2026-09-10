@@ -22,7 +22,7 @@ async function loadThemes() {
   status.hidden = false;
   status.textContent = 'Loading templates…';
   try {
-    const response = await fetch('/api/public/themes', { credentials: 'same-origin' });
+    const response = await fetch('/public/themes', { credentials: 'same-origin' });
     if (!response.ok) throw new Error('Could not load templates.');
     const themes = await response.json();
     if (!Array.isArray(themes)) throw new Error('Could not load templates.');
