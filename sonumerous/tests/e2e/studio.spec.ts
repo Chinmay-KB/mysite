@@ -102,7 +102,7 @@ test.describe('studio shell', () => {
     }
   });
 
-  test('library failed generation shows retry tile without error copy', async ({ page }) => {
+  test('library omits failed generations from the grid', async ({ page }) => {
     const failedJob = {
       id: 'e2e-failed-job',
       root_id: 'e2e-failed-job',
@@ -129,7 +129,7 @@ test.describe('studio shell', () => {
       });
     });
     await page.goto('/app/#/library');
-    await expect(page.locator('.library-status-tile--failed').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.library-status-tile--failed')).toHaveCount(0, { timeout: 30_000 });
     await expect(page.getByText(/model could not complete/i)).toHaveCount(0);
     await expect(page.getByText(/Something went wrong/i)).toHaveCount(0);
   });

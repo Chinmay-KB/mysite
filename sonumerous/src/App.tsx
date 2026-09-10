@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowRight, ArrowUpRight, Check, Download, Image, Images, Plus, RotateCcw, Share2, Sparkles, X } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Check, Download, Image, Images, Plus, Share2, Sparkles, X } from 'lucide-react';
 import type { Asset, Generation, GenerationInput, Model, Session, Theme } from '../shared/types';
 import { outcomeForGenerationSubmit } from '../shared/generationReplay';
 import { api, appLink, media, message, navigate, postGeneration } from './api';
@@ -493,10 +493,8 @@ function Library({ onError, revision, onRefresh, onFavourite, jobs }: { onError:
       setLoading(false);
     }
   }
-  const pending = jobs.filter(j => ['queued', 'generating', 'saving', 'failed'].includes(j.status)).slice(0, 4);
-  const failedJobs = pending.filter(j => j.status === 'failed');
-  const inProgressJobs = pending.filter(j => j.status !== 'failed');
-  const statusTileCount = failedJobs.length + inProgressJobs.length;
+  const inProgressJobs = jobs.filter(j => ['queued', 'generating', 'saving'].includes(j.status)).slice(0, 4);
+  const statusTileCount = inProgressJobs.length;
   const showCollectionEmpty = !loading && !items.length && !statusTileCount;
   const emptyTitle = filter === 'favourites' ? 'Keep your favourites close.' : 'Your collection is empty.';
   const emptyAction = <a className="button secondary" href="#/create">Create from a template</a>;
@@ -518,11 +516,6 @@ function Library({ onError, revision, onRefresh, onFavourite, jobs }: { onError:
       <Empty title={emptyTitle} action={emptyAction}>{emptyBody}</Empty>
     ) : (
       <div className="asset-grid">
-        {failedJobs.map(j => (
-          <a key={j.id} href="#/create" className="library-status-tile library-status-tile--failed" aria-label="Try again">
-            <RotateCcw size={18} strokeWidth={1.75} />
-          </a>
-        ))}
         {inProgressJobs.map(j => (
           <div key={j.id} className="library-status-tile library-status-tile--pending" aria-label="Generating">
             <Sparkles size={18} strokeWidth={1.75} />
