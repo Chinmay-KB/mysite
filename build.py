@@ -344,7 +344,6 @@ def ifx_feature():
   <div class="ifx-copy">
     <h3><a href="{IFX_BUILT_Y["site"]}" rel="noopener noreferrer">ifXBuiltY</a> <span class="stars" title="{IFX_BUILT_Y["stars"]} star on GitHub">★ {IFX_BUILT_Y["stars"]}</span></h3>
     <p>{html.escape(IFX_BUILT_Y["desc"])}</p>
-    <div class="ifx-facts" aria-label="ifXBuiltY facts"><span>{html.escape(IFX_BUILT_Y["stack"])}</span><span>{html.escape(IFX_BUILT_Y["license"])}</span><span>shareable fake screenshots</span></div>
     <p class="ifx-meta"><a href="{IFX_BUILT_Y["repo"]}" rel="noopener noreferrer">source on GitHub ↗</a> <a href="{IFX_BUILT_Y["site"]}" rel="noopener noreferrer">try xbuildsy.com ↗</a></p>
   </div>
   <div class="ifx-stage">
