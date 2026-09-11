@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f0e8">
+  <title>Micro-control fidelity study · WP Pivot Research</title>
+  <meta name="description" content="WP Pivot Research records the Windows Phone design language from labeled emulator and hardware sources. Measurements are published with their source data and limits.">
+  <style>
+    :root {
+      --paper: #f3f0e8;
+      --paper-deep: #e8e3d9;
+      --ink: #111111;
+      --muted: #595852;
+      --rule: #8b8981;
+      --rule-light: #c9c5bb;
+      --blue: #0067b8;
+      --blue-dark: #004b86;
+      --amber: #855300;
+      --white: #ffffff;
+      --content: 1520px;
+    }
+    * { box-sizing: border-box; }
+    html { color-scheme: light; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--paper); color: var(--ink);
+      font-family: "Segoe UI Variable", "Segoe UI", "Selawik", system-ui, sans-serif;
+      font-size: 16px; font-weight: 400; line-height: 1.55;
+    }
+    ::selection { background: var(--blue); color: var(--white); }
+    :focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+    a { color: var(--blue-dark); text-underline-offset: .2em; text-decoration-thickness: 1px; }
+    a:hover { color: var(--blue); }
+    img, video { display: block; max-width: 100%; }
+    button, input { font: inherit; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+    }
+    .skip-link {
+      position: fixed; z-index: 20; left: 16px; top: 12px; padding: 8px 12px;
+      background: var(--ink); color: var(--white); transform: translateY(-160%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .shell { width: min(calc(100% - 32px), var(--content)); margin-inline: auto; }
+
+    .site-header { border-bottom: 1px solid var(--ink); }
+    .site-header .shell {
+      min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 28px;
+    }
+    .brand {
+      color: var(--ink); font-size: clamp(1.35rem, 2.2vw, 2rem); font-weight: 650;
+      letter-spacing: -.035em; line-height: 1; text-decoration: none; white-space: nowrap;
+    }
+    .main-nav { display: flex; align-items: stretch; gap: clamp(16px, 2.7vw, 42px); }
+    .main-nav a {
+      color: var(--ink); display: grid; place-items: center; min-height: 66px; position: relative;
+      font-size: .78rem; font-weight: 650; letter-spacing: .07em; text-decoration: none; text-transform: uppercase;
+    }
+    .main-nav a::after { content: ""; position: absolute; inset: auto 0 0; height: 3px; background: transparent; }
+    .main-nav a:hover::after, .main-nav a.current::after { background: var(--blue); }
+
+    main { min-height: 66vh; }
+    .inner main { width: min(calc(100% - 32px), var(--content)); margin: 0 auto; padding: 0 0 112px; }
+    .inner main > :first-child { margin-top: 0; }
+    main h1, main h2, main h3 { text-wrap: balance; }
+    main h1 {
+      max-width: 14ch; margin: 0 0 40px; font-size: clamp(3rem, 7vw, 6rem);
+      font-weight: 600; letter-spacing: -.04em; line-height: .94;
+    }
+    main h2 {
+      margin: 72px 0 18px; padding-bottom: 10px; border-bottom: 1px solid var(--ink);
+      font-size: 1.15rem; font-weight: 650; letter-spacing: .055em; text-transform: uppercase;
+    }
+    main h3 { margin: 36px 0 10px; font-size: 1.1rem; font-weight: 650; }
+    main p, main li { max-width: 72ch; }
+    main p { margin: 0 0 1.15em; }
+    main ul, main ol { padding-left: 1.2em; }
+    main li { margin: .55em 0; }
+    main strong { font-weight: 650; }
+    main blockquote {
+      max-width: 36ch; margin: 48px 0; padding: 0; border: 0;
+      font-size: clamp(1.45rem, 3vw, 2.25rem); font-weight: 350; letter-spacing: -.025em; line-height: 1.2;
+    }
+    code, pre { font-family: "Cascadia Code", Consolas, monospace; }
+    code { background: var(--paper-deep); padding: .08em .32em; font-size: .9em; }
+    pre { overflow-x: auto; background: var(--ink); color: var(--white); padding: 18px; }
+    pre code { background: transparent; padding: 0; }
+    table { width: 100%; margin: 24px 0 42px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { padding: 13px 12px; border-bottom: 1px solid var(--rule-light); text-align: left; vertical-align: top; }
+    th { border-color: var(--ink); color: var(--muted); font-size: .75rem; font-weight: 650; letter-spacing: .065em; text-transform: uppercase; }
+    td:first-child, th:first-child { padding-left: 0; }
+    td:last-child, th:last-child { padding-right: 0; }
+    .status-badge { display: inline-block; color: var(--blue-dark); font-size: .74rem; font-weight: 650; letter-spacing: .065em; text-transform: uppercase; }
+    .status-planned { color: var(--amber); }
+    .status-available { color: #236600; }
+    .status-empty { color: var(--muted); }
+
+    .page-mast {
+      display: grid; grid-template-columns: minmax(270px, .72fr) minmax(0, 1.28fr);
+      min-height: 360px; border-bottom: 1px solid var(--ink);
+    }
+    .mast-title { display: flex; align-items: flex-end; padding: 64px 48px 66px 16px; border-right: 1px solid var(--rule); }
+    .page-mast h1 { max-width: 9ch; margin: 0; font-size: clamp(4rem, 7vw, 6rem); }
+    .mast-copy { display: flex; flex-direction: column; justify-content: flex-end; padding: 64px clamp(40px, 6vw, 96px) 66px; }
+    .page-deck { max-width: 48ch; margin: 0; font-size: clamp(1.2rem, 2vw, 1.55rem); line-height: 1.45; }
+    .page-deck + .page-deck { margin-top: 18px; }
+
+    .manual-section { display: grid; grid-template-columns: minmax(220px, .38fr) minmax(0, 1fr); border-bottom: 1px solid var(--ink); }
+    .section-label { padding: 54px 40px 64px 16px; }
+    .section-label h2 {
+      max-width: 10ch; margin: 0; padding: 0; border: 0; font-size: clamp(2rem, 3.4vw, 3.35rem);
+      font-weight: 350; letter-spacing: -.035em; line-height: 1; text-transform: none;
+    }
+    .section-body { min-width: 0; padding: 54px clamp(40px, 6vw, 96px) 64px; border-left: 1px solid var(--rule); }
+    .section-body > :first-child { margin-top: 0; }
+    .section-body > :last-child { margin-bottom: 0; }
+    .section-body > p { font-size: 1.08rem; }
+
+    .featured-record {
+      display: grid; grid-template-columns: minmax(180px, .75fr) minmax(0, 1.4fr) auto; align-items: start;
+      gap: 28px; padding: 22px 0 26px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+      color: var(--ink); text-decoration: none;
+    }
+    .featured-record:hover { color: var(--ink); background: var(--paper-deep); }
+    .featured-record .record-name { color: var(--blue-dark); font-size: clamp(1.55rem, 2.6vw, 2.4rem); font-weight: 600; letter-spacing: -.03em; line-height: 1.05; }
+    .record-detail { max-width: 52ch; line-height: 1.5; }
+    .record-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--ink); }
+    .record-row {
+      display: grid; grid-template-columns: minmax(180px, .75fr) minmax(0, 1.4fr) auto;
+      max-width: none; margin: 0; gap: 28px; padding: 18px 0;
+      border-bottom: 1px solid var(--rule-light); align-items: baseline;
+    }
+    .record-row:last-child { border-bottom-color: var(--ink); }
+    .record-name { font-weight: 650; }
+    .record-meta { color: var(--muted); }
+    .record-row a { font-weight: 650; }
+    .quiet-note { max-width: 62ch; margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--rule-light); color: var(--muted); }
+    .text-action { display: inline-block; margin-top: 24px; padding: 9px 0; border-bottom: 1px solid var(--ink); font-size: .82rem; font-weight: 650; letter-spacing: .055em; text-decoration: none; text-transform: uppercase; }
+    .empty-statement { max-width: 16ch; margin: 0; font-size: clamp(2rem, 4vw, 3.6rem); font-weight: 350; letter-spacing: -.035em; line-height: 1.08; }
+
+    .study-page .page-mast { min-height: 520px; }
+    .study-page .page-mast h1 { max-width: 8ch; font-size: clamp(3.8rem, 6vw, 6rem); font-weight: 350; }
+    .study-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 34px; border-top: 1px solid var(--ink); }
+    .study-fact { padding: 14px 18px 0 0; }
+    .study-fact dt { color: var(--muted); font-size: .74rem; font-weight: 650; letter-spacing: .065em; text-transform: uppercase; }
+    .study-fact dd { margin: 5px 0 0; font-weight: 550; }
+    .media-evidence, .comparison-evidence { margin: 0 0 42px; }
+    .media-evidence video, .media-evidence img,
+    .comparison-evidence video, .comparison-evidence img { width: 100%; height: auto; background: var(--ink); }
+    .media-evidence figcaption, .comparison-evidence figcaption {
+      display: flex; justify-content: space-between; gap: 24px; padding: 12px 0;
+      border-bottom: 1px solid var(--rule-light); color: var(--muted); font-size: .82rem;
+    }
+    .media-evidence figcaption strong, .comparison-evidence figcaption strong { color: var(--ink); }
+
+    .image-compare { --compare-position: 50%; }
+    .image-compare__stage {
+      position: relative; display: grid; overflow: hidden; background: var(--ink);
+      border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+    }
+    .image-compare__after { grid-area: 1 / 1; }
+    .image-compare__before {
+      position: absolute; inset: 0; overflow: hidden;
+      clip-path: inset(0 calc(100% - var(--compare-position)) 0 0);
+    }
+    .image-compare__before img { width: 100%; height: 100%; object-fit: cover; object-position: left top; }
+    .image-compare__divider {
+      position: absolute; z-index: 2; top: 0; bottom: 0; left: var(--compare-position);
+      width: 1px; background: var(--white); transform: translateX(-.5px); pointer-events: none;
+    }
+    .image-compare__divider::after {
+      content: ""; position: absolute; left: 50%; top: 50%; width: 18px; height: 48px;
+      border: 1px solid var(--white); background: var(--ink); transform: translate(-50%, -50%);
+    }
+    .image-compare__label, .compare-pane__label, .composite-compare__legend span {
+      color: var(--white); background: var(--ink); font-size: .78rem; font-weight: 650;
+      letter-spacing: .065em; line-height: 1.4; text-transform: uppercase;
+    }
+    .image-compare__label {
+      position: absolute; z-index: 3; top: 12px; padding: 6px 8px; pointer-events: none;
+    }
+    .image-compare__label--before { left: 12px; }
+    .image-compare__label--after { right: 12px; }
+    .image-compare__control {
+      display: grid; grid-template-columns: auto minmax(120px, 1fr) auto; align-items: center;
+      gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--rule-light);
+    }
+    .image-compare__control span { color: var(--muted); font-size: .78rem; font-weight: 650; letter-spacing: .055em; text-transform: uppercase; }
+    .image-compare__control input { width: 100%; min-height: 44px; margin: 0; accent-color: var(--blue); cursor: ew-resize; }
+
+    .video-compare__grid {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px;
+      background: var(--rule); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+    }
+    .video-compare__pane { min-width: 0; background: var(--paper); }
+    .compare-pane__label { display: block; padding: 7px 10px; }
+    .compare-pane__note {
+      min-height: 52px; margin: 0; padding: 9px 10px 10px;
+      color: var(--muted); font-size: .78rem; line-height: 1.4;
+    }
+    .compare-toolbar {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 0 18px;
+      padding: 10px 0; border-bottom: 1px solid var(--rule-light);
+    }
+    .compare-toolbar button {
+      min-height: 44px; padding: 0; border: 0; border-bottom: 1px solid var(--ink);
+      background: transparent; color: var(--blue-dark); cursor: pointer;
+      font-size: .82rem; font-weight: 650; letter-spacing: .055em; text-transform: uppercase;
+    }
+    .compare-toolbar button:hover { color: var(--blue); border-bottom-color: var(--blue); }
+    .compare-toolbar button:active { transform: translateY(1px); }
+    .compare-status { margin-left: auto; color: var(--muted); font-size: .78rem; }
+    .composite-compare__legend {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--rule);
+      border-top: 1px solid var(--ink);
+    }
+    .composite-compare__legend span { padding: 7px 10px; }
+    .composite-compare__legend span:last-child { text-align: right; }
+    .study-page .section-body h3 { margin-top: 42px; font-size: 1.25rem; }
+    .study-page .section-body table { margin-top: 26px; }
+    .study-page .section-body li { max-width: 68ch; }
+    .download-list a { display: block; padding: 16px 0; border-bottom: 1px solid var(--rule-light); font-weight: 650; text-decoration: none; }
+
+    .hero-sheet {
+      width: min(calc(100% - 32px), var(--content)); margin: 28px auto 0;
+      display: grid; grid-template-columns: minmax(420px, .95fr) minmax(560px, 1.35fr);
+      min-height: 650px; border-bottom: 1px solid var(--ink);
+    }
+    .hero-copy { display: flex; flex-direction: column; justify-content: center; padding: 72px 54px 84px 18px; border-right: 1px solid var(--rule); }
+    .hero-copy h1 { max-width: none; margin: 0 0 32px; font-size: clamp(3.4rem, 4.4vw, 4.8rem); }
+    .title-line { display: block; white-space: nowrap; }
+    .hero-copy .lead { max-width: 36ch; margin: 0; font-size: 1.25rem; line-height: 1.5; }
+    .primary-link {
+      display: flex; justify-content: space-between; align-items: center; max-width: 360px; padding: 10px 0;
+      border-bottom: 1px solid var(--ink); font-size: .82rem; font-weight: 650; letter-spacing: .055em;
+      text-decoration: none; text-transform: uppercase;
+    }
+    .primary-link span { font-size: 1.5rem; font-weight: 350; transition: transform .18s cubic-bezier(.2,.8,.2,1); }
+    .primary-link:hover span { transform: translateX(6px); }
+    .study-feature { display: flex; flex-direction: column; justify-content: center; padding: 72px clamp(40px, 6vw, 96px); }
+    .study-feature h2 {
+      max-width: 12ch; margin: 0 0 24px; padding: 0; border: 0;
+      font-size: clamp(3rem, 5vw, 5.2rem); font-weight: 350; letter-spacing: -.04em; line-height: .98; text-transform: none;
+    }
+    .study-summary { max-width: 46ch; margin: 0 0 42px; font-size: 1.15rem; line-height: 1.55; }
+
+    .research-index { width: min(calc(100% - 32px), var(--content)); margin: 0 auto 88px; }
+    .research-index h2 { margin: 0; padding: 20px 0 14px; border-bottom: 1px solid var(--ink); font-size: .86rem; }
+    .index-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .index-link { min-height: 150px; padding: 24px 26px; border-right: 1px solid var(--rule-light); color: var(--ink); text-decoration: none; }
+    .index-link:last-child { border-right: 0; }
+    .index-link strong { display: block; margin-bottom: 20px; color: var(--blue-dark); font-size: .88rem; letter-spacing: .045em; text-transform: uppercase; }
+    .index-link span { display: block; max-width: 25ch; font-size: .9rem; line-height: 1.45; }
+    .index-link:hover { background: var(--paper-deep); }
+
+    .site-footer { border-top: 1px solid var(--ink); }
+    .site-footer .shell { display: flex; justify-content: space-between; gap: 24px; padding: 24px 0 42px; color: var(--muted); font-size: .8rem; }
+    @media (max-width: 1050px) {
+      .site-header .shell { align-items: flex-start; flex-direction: column; padding-top: 18px; }
+      .main-nav { width: 100%; overflow-x: auto; }
+      .main-nav a { min-height: 48px; }
+      .hero-sheet { grid-template-columns: .9fr 1.1fr; }
+      .hero-copy h1 { font-size: 3.25rem; }
+      .title-line { white-space: normal; }
+      .study-feature { padding-inline: 42px; }
+      .study-feature h2 { font-size: 3.4rem; }
+      .page-mast { grid-template-columns: minmax(230px, .58fr) minmax(0, 1fr); }
+      .manual-section { grid-template-columns: minmax(190px, .3fr) minmax(0, 1fr); }
+      .featured-record, .record-row { grid-template-columns: minmax(150px, .65fr) minmax(0, 1fr) auto; gap: 20px; }
+    }
+    @media (max-width: 760px) {
+      .shell { width: min(calc(100% - 24px), var(--content)); }
+      .brand { font-size: 1.4rem; }
+      .hero-sheet { width: min(calc(100% - 24px), var(--content)); grid-template-columns: 1fr; margin-top: 16px; }
+      .hero-copy { min-height: 590px; padding: 54px 4px 64px; border-right: 0; }
+      .hero-copy h1 { font-size: clamp(3.1rem, 13vw, 4rem); }
+      .study-feature { padding: 52px 4px 64px; border-top: 1px solid var(--ink); }
+      .study-feature h2 { font-size: clamp(3rem, 14vw, 4.4rem); }
+      .index-grid { grid-template-columns: 1fr 1fr; }
+      .index-link:nth-child(2) { border-right: 0; }
+      .index-link { min-height: 132px; border-bottom: 1px solid var(--rule-light); }
+      .inner main { width: min(calc(100% - 24px), var(--content)); padding-bottom: 80px; }
+      .page-mast, .manual-section { grid-template-columns: 1fr; }
+      .page-mast, .study-page .page-mast { min-height: 0; }
+      .mast-title { min-height: 290px; padding: 52px 4px 48px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      .page-mast h1, .study-page .page-mast h1 { max-width: 9ch; font-size: clamp(3.6rem, 16vw, 5rem); }
+      .mast-copy { padding: 42px 4px 48px; }
+      .section-label { padding: 42px 4px 26px; }
+      .section-label h2 { max-width: 14ch; }
+      .section-body { padding: 0 4px 52px; border-left: 0; }
+      .featured-record, .record-row { grid-template-columns: 1fr; gap: 8px; }
+      .featured-record { padding: 20px 0 22px; }
+      .record-row { padding: 16px 0; }
+      .study-facts { grid-template-columns: 1fr 1fr; }
+      .study-fact { padding-block: 12px; border-bottom: 1px solid var(--rule-light); }
+      .media-evidence figcaption, .comparison-evidence figcaption { flex-direction: column; gap: 4px; }
+      .compare-pane__note { min-height: 68px; font-size: .78rem; }
+      .compare-toolbar { gap: 0 14px; }
+      .compare-status { flex-basis: 100%; margin: 6px 0 0; }
+      table { display: block; overflow-x: auto; }
+      .site-footer .shell { flex-direction: column; }
+    }
+    @media (max-width: 460px) {
+      .index-grid { grid-template-columns: 1fr; }
+      .index-link { border-right: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .primary-link span { transition: none; }
+      .compare-toolbar button:active { transform: none; }
+    }
+  </style>
+  <script defer src="/wp_pivot_flutter/assets/comparisons.js"></script>
+</head>
+<body class="inner study-page">
+  <!-- THESIS: A contemporary service manual for evidence-led Metro restoration. OWN-WORLD: warm paper, black ink, Lumia blue, measured rules, Segoe UI, no decorative cards. STORY: literal project purpose -> published Pivot study -> research index. FIRST VIEWPORT: plain project title beside one source-backed study; no campaign slogan, process checklist, or decorative device. FORM: distilled editorial split derived from Bench Specimen; seed key 5b7aad82. FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance -->
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <div class="shell">
+      <a class="brand" href="/wp_pivot_flutter/">WP Pivot Research</a>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="/wp_pivot_flutter/research/" >Research</a>
+        <a href="/wp_pivot_flutter/paradigms/" >Paradigms</a>
+        <a href="/wp_pivot_flutter/captures/" >Captures</a>
+        <a href="/wp_pivot_flutter/resources/" >Resources</a>
+        <a href="/wp_pivot_flutter/essays/" >Essays</a>
+        <a href="/wp_pivot_flutter/about/" >About</a>
+      </nav>
+    </div>
+  </header>
+  <main id="content"><header class="page-mast">
+  <div class="mast-title"><h1>Three controls, measured.</h1></div>
+  <div class="mast-copy">
+    <p class="page-deck">Slider, ProgressBar, and TiltEffect were recorded on the WP8.1 emulator, implemented in Flutter, replayed with retained inputs, and checked again after candidate freeze.</p>
+    <dl class="study-facts">
+      <div class="study-fact"><dt>Controls</dt><dd>3</dd></div>
+      <div class="study-fact"><dt>Native trials</dt><dd>17</dd></div>
+      <div class="study-fact"><dt>Native PNGs</dt><dd>885</dd></div>
+      <div class="study-fact"><dt>Hardware</dt><dd>Lumia pending</dd></div>
+    </dl>
+  </div>
+</header>
+
+<section class="manual-section" aria-labelledby="result-title">
+  <header class="section-label"><h2 id="result-title">Held-out result</h2></header>
+  <div class="section-body">
+    <table>
+      <thead><tr><th>Control</th><th>Measured result</th><th>Boundary</th></tr></thead>
+      <tbody>
+        <tr><td>Slider</td><td>Tap/drag value error &lt;0.000034 units; track and thumb edges exact.</td><td>Value ≤1 unit; edges ≤1 px.</td></tr>
+        <tr><td>Determinate progress</td><td>408×4 track and 42% fill exact on all four edges.</td><td>Edges ≤1 px.</td></tr>
+        <tr><td>Indeterminate progress</td><td>Five 4×4 marks; phase-aligned center MAE 2.175 px across 166 observations.</td><td>Center MAE ≤8 px.</td></tr>
+        <tr><td>TiltEffect</td><td>Pose formula error &lt;0.0001°/px; fresh corner edges exact, center maximum edge error 2 px.</td><td>Pose ≤0.25°/0.5 px; projected edges reported separately.</td></tr>
+      </tbody>
+    </table>
+    <p class="quiet-note">There is no aggregate fidelity score. Values, pixel edges, mark trajectories, pose, and timing stay in their native units.</p>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="frames-title">
+  <header class="section-label"><h2 id="frames-title">Resting frame</h2></header>
+  <div class="section-body">
+    <figure class="comparison-evidence">
+      <div class="image-compare" data-image-compare="" style="--compare-position: 50%;" role="group" aria-label="Native and Flutter resting-frame comparison">
+        <div class="image-compare__stage">
+          <img class="image-compare__after" src="/wp_pivot_flutter/media/components/flutter-rest.png" alt="Flutter micro-control reference scene at rest" />
+          <div class="image-compare__before"><img src="/wp_pivot_flutter/media/components/native-rest.png" alt="Native WP8.1 micro-control fixture at rest" /></div>
+          <span class="image-compare__label image-compare__label--before">Native</span>
+          <span class="image-compare__label image-compare__label--after">Flutter</span>
+          <span class="image-compare__divider" aria-hidden="true"></span>
+        </div>
+        <label class="sr-only" for="resting-frame-reveal">Reveal more of the native or Flutter resting frame</label>
+        <div class="image-compare__control"><span aria-hidden="true">Native</span><input id="resting-frame-reveal" data-image-compare-input="" data-first-label="Native" data-second-label="Flutter" type="range" min="0" max="100" value="50" /><span aria-hidden="true">Flutter</span></div>
+      </div>
+      <figcaption><strong>Resting-frame reveal</strong><span>Original native PNG · deterministic Flutter render · both 480×800</span></figcaption>
+    </figure>
+    <p class="quiet-note">The layouts share reference coordinates. Typography remains visibly different because Flutter bundles Selawik rather than proprietary Segoe WP.</p>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="motion-title">
+  <header class="section-label"><h2 id="motion-title">Recorded motion</h2></header>
+  <div class="section-body">
+    <h3>Indeterminate ProgressBar</h3>
+    <figure class="comparison-evidence video-compare" data-video-compare="">
+      <div class="video-compare__grid">
+        <div class="video-compare__pane">
+          <span class="compare-pane__label">Native acquisition</span>
+          <video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/components/native-rest.png">
+            <source src="/wp_pivot_flutter/media/components/progress-native.mp4" type="video/mp4" />Your browser cannot play the native video.
+          </video>
+          <p class="compare-pane__note">Held original frames; no interpolation.</p>
+        </div>
+        <div class="video-compare__pane">
+          <span class="compare-pane__label">Flutter replay</span>
+          <video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/components/flutter-rest.png">
+            <source src="/wp_pivot_flutter/media/components/progress-flutter.mp4" type="video/mp4" />Your browser cannot play the Flutter video.
+          </video>
+          <p class="compare-pane__note">33.333 ms deterministic test clock.</p>
+        </div>
+      </div>
+      <div class="compare-toolbar" role="group" aria-label="Indeterminate ProgressBar comparison playback">
+        <button type="button" data-video-play="">Play both</button><button type="button" data-video-pause="">Pause both</button><button type="button" data-video-restart="">Restart both</button><span class="compare-status" data-video-status="" aria-live="polite">Ready · independent timelines</span>
+      </div>
+      <figcaption><strong>Indeterminate ProgressBar</strong><span>Launches together; clocks and durations remain independent</span></figcaption>
+    </figure>
+    <figure class="media-evidence">
+      <img src="/wp_pivot_flutter/media/components/indeterminate-trajectories.png" alt="Five measured native indeterminate progress mark trajectories across three repetitions" />
+      <figcaption><strong>Native mark trajectories</strong><span>Repetition 3 is held out</span></figcaption>
+    </figure>
+
+    <h3>TiltEffect corner press</h3>
+    <figure class="comparison-evidence video-compare" data-video-compare="">
+      <div class="video-compare__grid">
+        <div class="video-compare__pane">
+          <span class="compare-pane__label">Fresh native confirmation</span>
+          <video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/components/native-rest.png">
+            <source src="/wp_pivot_flutter/media/components/tilt-native.mp4" type="video/mp4" />Your browser cannot play the native video.
+          </video>
+          <p class="compare-pane__note">Captured after candidate freeze.</p>
+        </div>
+        <div class="video-compare__pane">
+          <span class="compare-pane__label">Flutter replay</span>
+          <video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/components/flutter-rest.png">
+            <source src="/wp_pivot_flutter/media/components/tilt-flutter.mp4" type="video/mp4" />Your browser cannot play the Flutter video.
+          </video>
+          <p class="compare-pane__note">Retained host input intervals.</p>
+        </div>
+      </div>
+      <div class="compare-toolbar" role="group" aria-label="TiltEffect comparison playback">
+        <button type="button" data-video-play="">Play both</button><button type="button" data-video-pause="">Pause both</button><button type="button" data-video-restart="">Restart both</button><span class="compare-status" data-video-status="" aria-live="polite">Ready · independent timelines</span>
+      </div>
+      <figcaption><strong>TiltEffect corner press</strong><span>Launches together; clocks and durations remain independent</span></figcaption>
+    </figure>
+    <figure class="media-evidence">
+      <img src="/wp_pivot_flutter/media/components/tilt-release.png" alt="Native TiltEffect rotation and depth after pointer release" />
+      <figcaption><strong>Guest-clock release telemetry</strong><span>200 ms delay and 100 ms return bracketed by samples</span></figcaption>
+    </figure>
+    <p class="quiet-note">“Play both” launches the two files together without aligning or resampling their timelines. Native and Flutter use different clocks and durations. The 30 fps native MP4 holds the last acquired image; it does not turn the roughly 15–16 fps source into new observations.</p>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="method-title">
+  <header class="section-label"><h2 id="method-title">Method and integrity</h2></header>
+  <div class="section-body">
+    <ol>
+      <li>A source-complete WP8.1 fixture rendered actual Slider and ProgressBar controls and Toolkit TiltEffect at 480×800.</li>
+      <li>Repetitions 1–2 were fitting evidence; repetition 3 was withheld until the candidate was frozen.</li>
+      <li>All 769 initial native PNGs passed hash, byte-length, membership, dimension, manifest-error, and initial-state checks.</li>
+      <li>After the first held-out Tilt replay exposed a camera-convention defect, the fix was checked against fitting data and two new native trials were captured. Their 116 PNGs also passed integrity checks.</li>
+      <li>The final Flutter replay retained source snapshots and produced 889 indexed 480×800 frames across the held-out and fresh-confirmation sets.</li>
+    </ol>
+    <p>Slider final values matched native telemetry and image-derived positions independently. Progress dots were compared after one phase offset without interpolating native motion. Tilt image edges and guest-clock release telemetry were evaluated as separate domains.</p>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="unknown-title">
+  <header class="section-label"><h2 id="unknown-title">What remains unknown</h2></header>
+  <div class="section-body">
+    <ul>
+      <li>The native indeterminate loop did not recur. Its held-out lower bound is greater than 3452.231 ms; the Flutter 4500 ms loop is conservative, not a measured native period.</li>
+      <li>Host acquisition and the guest Stopwatch have no calibrated clock correspondence.</li>
+      <li>Emulator evidence does not establish Lumia presentation, latency, or performance.</li>
+      <li>Selawik and Flutter rasterization do not reproduce Segoe WP exactly.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="evidence-title">
+  <header class="section-label"><h2 id="evidence-title">Evidence and code</h2></header>
+  <div class="section-body download-list">
+    <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/blob/master/research/components/micro-controls/README.md">Protocol and measurements</a>
+    <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/tree/master/tools/native_micro_controls">Native fixture</a>
+    <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/blob/master/tools/components/analyze_micro_controls.py">Native analyzer</a>
+    <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/blob/master/tools/components/compare_micro_controls.py">Held-out comparator</a>
+    <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/releases/tag/micro-controls-evidence-2026-08-29">Raw evidence bundle</a>
+  </div>
+</section>
+</main>
+  <footer class="site-footer">
+    <div class="shell">
+      <span>WP Pivot Research · evidence before claims</span>
+      <span><a href="https://github.com/Chinmay-KB/wp_pivot_flutter">GitHub</a> · <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/blob/master/docs/ROADMAP.md">Roadmap</a></span>
+    </div>
+  </footer>
+</body>
+</html>

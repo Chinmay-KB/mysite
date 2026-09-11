@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f0e8">
+  <title>Start screen and app list primitives · WP Pivot Research</title>
+  <meta name="description" content="WP Pivot Research records the Windows Phone design language from labeled emulator and hardware sources. Measurements are published with their source data and limits.">
+  <style>
+    :root {
+      --paper: #f3f0e8;
+      --paper-deep: #e8e3d9;
+      --ink: #111111;
+      --muted: #595852;
+      --rule: #8b8981;
+      --rule-light: #c9c5bb;
+      --blue: #0067b8;
+      --blue-dark: #004b86;
+      --amber: #855300;
+      --white: #ffffff;
+      --content: 1520px;
+    }
+    * { box-sizing: border-box; }
+    html { color-scheme: light; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--paper); color: var(--ink);
+      font-family: "Segoe UI Variable", "Segoe UI", "Selawik", system-ui, sans-serif;
+      font-size: 16px; font-weight: 400; line-height: 1.55;
+    }
+    ::selection { background: var(--blue); color: var(--white); }
+    :focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+    a { color: var(--blue-dark); text-underline-offset: .2em; text-decoration-thickness: 1px; }
+    a:hover { color: var(--blue); }
+    img, video { display: block; max-width: 100%; }
+    button, input { font: inherit; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+    }
+    .skip-link {
+      position: fixed; z-index: 20; left: 16px; top: 12px; padding: 8px 12px;
+      background: var(--ink); color: var(--white); transform: translateY(-160%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .shell { width: min(calc(100% - 32px), var(--content)); margin-inline: auto; }
+
+    .site-header { border-bottom: 1px solid var(--ink); }
+    .site-header .shell {
+      min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 28px;
+    }
+    .brand {
+      color: var(--ink); font-size: clamp(1.35rem, 2.2vw, 2rem); font-weight: 650;
+      letter-spacing: -.035em; line-height: 1; text-decoration: none; white-space: nowrap;
+    }
+    .main-nav { display: flex; align-items: stretch; gap: clamp(16px, 2.7vw, 42px); }
+    .main-nav a {
+      color: var(--ink); display: grid; place-items: center; min-height: 66px; position: relative;
+      font-size: .78rem; font-weight: 650; letter-spacing: .07em; text-decoration: none; text-transform: uppercase;
+    }
+    .main-nav a::after { content: ""; position: absolute; inset: auto 0 0; height: 3px; background: transparent; }
+    .main-nav a:hover::after, .main-nav a.current::after { background: var(--blue); }
+
+    main { min-height: 66vh; }
+    .inner main { width: min(calc(100% - 32px), var(--content)); margin: 0 auto; padding: 0 0 112px; }
+    .inner main > :first-child { margin-top: 0; }
+    main h1, main h2, main h3 { text-wrap: balance; }
+    main h1 {
+      max-width: 14ch; margin: 0 0 40px; font-size: clamp(3rem, 7vw, 6rem);
+      font-weight: 600; letter-spacing: -.04em; line-height: .94;
+    }
+    main h2 {
+      margin: 72px 0 18px; padding-bottom: 10px; border-bottom: 1px solid var(--ink);
+      font-size: 1.15rem; font-weight: 650; letter-spacing: .055em; text-transform: uppercase;
+    }
+    main h3 { margin: 36px 0 10px; font-size: 1.1rem; font-weight: 650; }
+    main p, main li { max-width: 72ch; }
+    main p { margin: 0 0 1.15em; }
+    main ul, main ol { padding-left: 1.2em; }
+    main li { margin: .55em 0; }
+    main strong { font-weight: 650; }
+    main blockquote {
+      max-width: 36ch; margin: 48px 0; padding: 0; border: 0;
+      font-size: clamp(1.45rem, 3vw, 2.25rem); font-weight: 350; letter-spacing: -.025em; line-height: 1.2;
+    }
+    code, pre { font-family: "Cascadia Code", Consolas, monospace; }
+    code { background: var(--paper-deep); padding: .08em .32em; font-size: .9em; }
+    pre { overflow-x: auto; background: var(--ink); color: var(--white); padding: 18px; }
+    pre code { background: transparent; padding: 0; }
+    table { width: 100%; margin: 24px 0 42px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { padding: 13px 12px; border-bottom: 1px solid var(--rule-light); text-align: left; vertical-align: top; }
+    th { border-color: var(--ink); color: var(--muted); font-size: .75rem; font-weight: 650; letter-spacing: .065em; text-transform: uppercase; }
+    td:first-child, th:first-child { padding-left: 0; }
+    td:last-child, th:last-child { padding-right: 0; }
+    .status-badge { display: inline-block; color: var(--blue-dark); font-size: .74rem; font-weight: 650; letter-spacing: .065em; text-transform: uppercase; }
+    .status-planned { color: var(--amber); }
+    .status-available { color: #236600; }
+    .status-empty { color: var(--muted); }
+
+    .page-mast {
+      display: grid; grid-template-columns: minmax(270px, .72fr) minmax(0, 1.28fr);
+      min-height: 360px; border-bottom: 1px solid var(--ink);
+    }
+    .mast-title { display: flex; align-items: flex-end; padding: 64px 48px 66px 16px; border-right: 1px solid var(--rule); }
+    .page-mast h1 { max-width: 9ch; margin: 0; font-size: clamp(4rem, 7vw, 6rem); }
+    .mast-copy { display: flex; flex-direction: column; justify-content: flex-end; padding: 64px clamp(40px, 6vw, 96px) 66px; }
+    .page-deck { max-width: 48ch; margin: 0; font-size: clamp(1.2rem, 2vw, 1.55rem); line-height: 1.45; }
+    .page-deck + .page-deck { margin-top: 18px; }
+
+    .manual-section { display: grid; grid-template-columns: minmax(220px, .38fr) minmax(0, 1fr); border-bottom: 1px solid var(--ink); }
+    .section-label { padding: 54px 40px 64px 16px; }
+    .section-label h2 {
+      max-width: 10ch; margin: 0; padding: 0; border: 0; font-size: clamp(2rem, 3.4vw, 3.35rem);
+      font-weight: 350; letter-spacing: -.035em; line-height: 1; text-transform: none;
+    }
+    .section-body { min-width: 0; padding: 54px clamp(40px, 6vw, 96px) 64px; border-left: 1px solid var(--rule); }
+    .section-body > :first-child { margin-top: 0; }
+    .section-body > :last-child { margin-bottom: 0; }
+    .section-body > p { font-size: 1.08rem; }
+
+    .featured-record {
+      display: grid; grid-template-columns: minmax(180px, .75fr) minmax(0, 1.4fr) auto; align-items: start;
+      gap: 28px; padding: 22px 0 26px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+      color: var(--ink); text-decoration: none;
+    }
+    .featured-record:hover { color: var(--ink); background: var(--paper-deep); }
+    .featured-record .record-name { color: var(--blue-dark); font-size: clamp(1.55rem, 2.6vw, 2.4rem); font-weight: 600; letter-spacing: -.03em; line-height: 1.05; }
+    .record-detail { max-width: 52ch; line-height: 1.5; }
+    .record-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--ink); }
+    .record-row {
+      display: grid; grid-template-columns: minmax(180px, .75fr) minmax(0, 1.4fr) auto;
+      max-width: none; margin: 0; gap: 28px; padding: 18px 0;
+      border-bottom: 1px solid var(--rule-light); align-items: baseline;
+    }
+    .record-row:last-child { border-bottom-color: var(--ink); }
+    .record-name { font-weight: 650; }
+    .record-meta { color: var(--muted); }
+    .record-row a { font-weight: 650; }
+    .quiet-note { max-width: 62ch; margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--rule-light); color: var(--muted); }
+    .text-action { display: inline-block; margin-top: 24px; padding: 9px 0; border-bottom: 1px solid var(--ink); font-size: .82rem; font-weight: 650; letter-spacing: .055em; text-decoration: none; text-transform: uppercase; }
+    .empty-statement { max-width: 16ch; margin: 0; font-size: clamp(2rem, 4vw, 3.6rem); font-weight: 350; letter-spacing: -.035em; line-height: 1.08; }
+
+    .study-page .page-mast { min-height: 520px; }
+    .study-page .page-mast h1 { max-width: 8ch; font-size: clamp(3.8rem, 6vw, 6rem); font-weight: 350; }
+    .study-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 34px; border-top: 1px solid var(--ink); }
+    .study-fact { padding: 14px 18px 0 0; }
+    .study-fact dt { color: var(--muted); font-size: .74rem; font-weight: 650; letter-spacing: .065em; text-transform: uppercase; }
+    .study-fact dd { margin: 5px 0 0; font-weight: 550; }
+    .media-evidence, .comparison-evidence { margin: 0 0 42px; }
+    .media-evidence video, .media-evidence img,
+    .comparison-evidence video, .comparison-evidence img { width: 100%; height: auto; background: var(--ink); }
+    .media-evidence figcaption, .comparison-evidence figcaption {
+      display: flex; justify-content: space-between; gap: 24px; padding: 12px 0;
+      border-bottom: 1px solid var(--rule-light); color: var(--muted); font-size: .82rem;
+    }
+    .media-evidence figcaption strong, .comparison-evidence figcaption strong { color: var(--ink); }
+
+    .image-compare { --compare-position: 50%; }
+    .image-compare__stage {
+      position: relative; display: grid; overflow: hidden; background: var(--ink);
+      border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+    }
+    .image-compare__after { grid-area: 1 / 1; }
+    .image-compare__before {
+      position: absolute; inset: 0; overflow: hidden;
+      clip-path: inset(0 calc(100% - var(--compare-position)) 0 0);
+    }
+    .image-compare__before img { width: 100%; height: 100%; object-fit: cover; object-position: left top; }
+    .image-compare__divider {
+      position: absolute; z-index: 2; top: 0; bottom: 0; left: var(--compare-position);
+      width: 1px; background: var(--white); transform: translateX(-.5px); pointer-events: none;
+    }
+    .image-compare__divider::after {
+      content: ""; position: absolute; left: 50%; top: 50%; width: 18px; height: 48px;
+      border: 1px solid var(--white); background: var(--ink); transform: translate(-50%, -50%);
+    }
+    .image-compare__label, .compare-pane__label, .composite-compare__legend span {
+      color: var(--white); background: var(--ink); font-size: .78rem; font-weight: 650;
+      letter-spacing: .065em; line-height: 1.4; text-transform: uppercase;
+    }
+    .image-compare__label {
+      position: absolute; z-index: 3; top: 12px; padding: 6px 8px; pointer-events: none;
+    }
+    .image-compare__label--before { left: 12px; }
+    .image-compare__label--after { right: 12px; }
+    .image-compare__control {
+      display: grid; grid-template-columns: auto minmax(120px, 1fr) auto; align-items: center;
+      gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--rule-light);
+    }
+    .image-compare__control span { color: var(--muted); font-size: .78rem; font-weight: 650; letter-spacing: .055em; text-transform: uppercase; }
+    .image-compare__control input { width: 100%; min-height: 44px; margin: 0; accent-color: var(--blue); cursor: ew-resize; }
+
+    .video-compare__grid {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px;
+      background: var(--rule); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+    }
+    .video-compare__pane { min-width: 0; background: var(--paper); }
+    .compare-pane__label { display: block; padding: 7px 10px; }
+    .compare-pane__note {
+      min-height: 52px; margin: 0; padding: 9px 10px 10px;
+      color: var(--muted); font-size: .78rem; line-height: 1.4;
+    }
+    .compare-toolbar {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 0 18px;
+      padding: 10px 0; border-bottom: 1px solid var(--rule-light);
+    }
+    .compare-toolbar button {
+      min-height: 44px; padding: 0; border: 0; border-bottom: 1px solid var(--ink);
+      background: transparent; color: var(--blue-dark); cursor: pointer;
+      font-size: .82rem; font-weight: 650; letter-spacing: .055em; text-transform: uppercase;
+    }
+    .compare-toolbar button:hover { color: var(--blue); border-bottom-color: var(--blue); }
+    .compare-toolbar button:active { transform: translateY(1px); }
+    .compare-status { margin-left: auto; color: var(--muted); font-size: .78rem; }
+    .composite-compare__legend {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--rule);
+      border-top: 1px solid var(--ink);
+    }
+    .composite-compare__legend span { padding: 7px 10px; }
+    .composite-compare__legend span:last-child { text-align: right; }
+    .study-page .section-body h3 { margin-top: 42px; font-size: 1.25rem; }
+    .study-page .section-body table { margin-top: 26px; }
+    .study-page .section-body li { max-width: 68ch; }
+    .download-list a { display: block; padding: 16px 0; border-bottom: 1px solid var(--rule-light); font-weight: 650; text-decoration: none; }
+
+    .hero-sheet {
+      width: min(calc(100% - 32px), var(--content)); margin: 28px auto 0;
+      display: grid; grid-template-columns: minmax(420px, .95fr) minmax(560px, 1.35fr);
+      min-height: 650px; border-bottom: 1px solid var(--ink);
+    }
+    .hero-copy { display: flex; flex-direction: column; justify-content: center; padding: 72px 54px 84px 18px; border-right: 1px solid var(--rule); }
+    .hero-copy h1 { max-width: none; margin: 0 0 32px; font-size: clamp(3.4rem, 4.4vw, 4.8rem); }
+    .title-line { display: block; white-space: nowrap; }
+    .hero-copy .lead { max-width: 36ch; margin: 0; font-size: 1.25rem; line-height: 1.5; }
+    .primary-link {
+      display: flex; justify-content: space-between; align-items: center; max-width: 360px; padding: 10px 0;
+      border-bottom: 1px solid var(--ink); font-size: .82rem; font-weight: 650; letter-spacing: .055em;
+      text-decoration: none; text-transform: uppercase;
+    }
+    .primary-link span { font-size: 1.5rem; font-weight: 350; transition: transform .18s cubic-bezier(.2,.8,.2,1); }
+    .primary-link:hover span { transform: translateX(6px); }
+    .study-feature { display: flex; flex-direction: column; justify-content: center; padding: 72px clamp(40px, 6vw, 96px); }
+    .study-feature h2 {
+      max-width: 12ch; margin: 0 0 24px; padding: 0; border: 0;
+      font-size: clamp(3rem, 5vw, 5.2rem); font-weight: 350; letter-spacing: -.04em; line-height: .98; text-transform: none;
+    }
+    .study-summary { max-width: 46ch; margin: 0 0 42px; font-size: 1.15rem; line-height: 1.55; }
+
+    .research-index { width: min(calc(100% - 32px), var(--content)); margin: 0 auto 88px; }
+    .research-index h2 { margin: 0; padding: 20px 0 14px; border-bottom: 1px solid var(--ink); font-size: .86rem; }
+    .index-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .index-link { min-height: 150px; padding: 24px 26px; border-right: 1px solid var(--rule-light); color: var(--ink); text-decoration: none; }
+    .index-link:last-child { border-right: 0; }
+    .index-link strong { display: block; margin-bottom: 20px; color: var(--blue-dark); font-size: .88rem; letter-spacing: .045em; text-transform: uppercase; }
+    .index-link span { display: block; max-width: 25ch; font-size: .9rem; line-height: 1.45; }
+    .index-link:hover { background: var(--paper-deep); }
+
+    .site-footer { border-top: 1px solid var(--ink); }
+    .site-footer .shell { display: flex; justify-content: space-between; gap: 24px; padding: 24px 0 42px; color: var(--muted); font-size: .8rem; }
+    @media (max-width: 1050px) {
+      .site-header .shell { align-items: flex-start; flex-direction: column; padding-top: 18px; }
+      .main-nav { width: 100%; overflow-x: auto; }
+      .main-nav a { min-height: 48px; }
+      .hero-sheet { grid-template-columns: .9fr 1.1fr; }
+      .hero-copy h1 { font-size: 3.25rem; }
+      .title-line { white-space: normal; }
+      .study-feature { padding-inline: 42px; }
+      .study-feature h2 { font-size: 3.4rem; }
+      .page-mast { grid-template-columns: minmax(230px, .58fr) minmax(0, 1fr); }
+      .manual-section { grid-template-columns: minmax(190px, .3fr) minmax(0, 1fr); }
+      .featured-record, .record-row { grid-template-columns: minmax(150px, .65fr) minmax(0, 1fr) auto; gap: 20px; }
+    }
+    @media (max-width: 760px) {
+      .shell { width: min(calc(100% - 24px), var(--content)); }
+      .brand { font-size: 1.4rem; }
+      .hero-sheet { width: min(calc(100% - 24px), var(--content)); grid-template-columns: 1fr; margin-top: 16px; }
+      .hero-copy { min-height: 590px; padding: 54px 4px 64px; border-right: 0; }
+      .hero-copy h1 { font-size: clamp(3.1rem, 13vw, 4rem); }
+      .study-feature { padding: 52px 4px 64px; border-top: 1px solid var(--ink); }
+      .study-feature h2 { font-size: clamp(3rem, 14vw, 4.4rem); }
+      .index-grid { grid-template-columns: 1fr 1fr; }
+      .index-link:nth-child(2) { border-right: 0; }
+      .index-link { min-height: 132px; border-bottom: 1px solid var(--rule-light); }
+      .inner main { width: min(calc(100% - 24px), var(--content)); padding-bottom: 80px; }
+      .page-mast, .manual-section { grid-template-columns: 1fr; }
+      .page-mast, .study-page .page-mast { min-height: 0; }
+      .mast-title { min-height: 290px; padding: 52px 4px 48px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      .page-mast h1, .study-page .page-mast h1 { max-width: 9ch; font-size: clamp(3.6rem, 16vw, 5rem); }
+      .mast-copy { padding: 42px 4px 48px; }
+      .section-label { padding: 42px 4px 26px; }
+      .section-label h2 { max-width: 14ch; }
+      .section-body { padding: 0 4px 52px; border-left: 0; }
+      .featured-record, .record-row { grid-template-columns: 1fr; gap: 8px; }
+      .featured-record { padding: 20px 0 22px; }
+      .record-row { padding: 16px 0; }
+      .study-facts { grid-template-columns: 1fr 1fr; }
+      .study-fact { padding-block: 12px; border-bottom: 1px solid var(--rule-light); }
+      .media-evidence figcaption, .comparison-evidence figcaption { flex-direction: column; gap: 4px; }
+      .compare-pane__note { min-height: 68px; font-size: .78rem; }
+      .compare-toolbar { gap: 0 14px; }
+      .compare-status { flex-basis: 100%; margin: 6px 0 0; }
+      table { display: block; overflow-x: auto; }
+      .site-footer .shell { flex-direction: column; }
+    }
+    @media (max-width: 460px) {
+      .index-grid { grid-template-columns: 1fr; }
+      .index-link { border-right: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .primary-link span { transition: none; }
+      .compare-toolbar button:active { transform: none; }
+    }
+  </style>
+  <script defer src="/wp_pivot_flutter/assets/comparisons.js"></script>
+</head>
+<body class="inner study-page">
+  <!-- THESIS: A contemporary service manual for evidence-led Metro restoration. OWN-WORLD: warm paper, black ink, Lumia blue, measured rules, Segoe UI, no decorative cards. STORY: literal project purpose -> published Pivot study -> research index. FIRST VIEWPORT: plain project title beside one source-backed study; no campaign slogan, process checklist, or decorative device. FORM: distilled editorial split derived from Bench Specimen; seed key 5b7aad82. FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance -->
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <div class="shell">
+      <a class="brand" href="/wp_pivot_flutter/">WP Pivot Research</a>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="/wp_pivot_flutter/research/" >Research</a>
+        <a href="/wp_pivot_flutter/paradigms/" >Paradigms</a>
+        <a href="/wp_pivot_flutter/captures/" >Captures</a>
+        <a href="/wp_pivot_flutter/resources/" >Resources</a>
+        <a href="/wp_pivot_flutter/essays/" >Essays</a>
+        <a href="/wp_pivot_flutter/about/" >About</a>
+      </nav>
+    </div>
+  </header>
+  <main id="content"><header class="page-mast">
+  <div class="mast-title"><h1>Start screen and app list primitives</h1></div>
+  <div class="mast-copy"><p class="page-deck">A reproducible WP8.1 emulator study of tiles, app-list surfaces, alphabet navigation, scrolling, and live content. Research/tooling/media only: no launcher or package API decision.</p></div>
+</header>
+
+<section class="manual-section" aria-labelledby="scope">
+  <header class="section-label"><h2 id="scope">Scope and evidence</h2></header>
+  <div class="section-body">
+    <p>The reference is the Microsoft Windows Phone 8.1 WVGA emulator at 480 × 800. The authoritative registry is <code>research/start-screen/measurements.json</code> schema v4; canonical media provenance is <code>docs/media/start-screen/media-index.json</code>. This release indexes 67 registry trials across 23 scenario IDs and 20 canonical source-mapped clips; requested-outcome-failed inverse flicks remain in that registry as observed snap-backs, while pilots and superseded invalid-precondition trials are retained separately in the release. <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/releases/tag/start-screen-evidence-2026-08-30">Release page</a> · <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/releases/download/start-screen-evidence-2026-08-30/wp81-start-screen-evidence-2026-08-30.zip">download evidence archive</a>.</p>
+    <p>Every MP4 below is 480 × 800 H.264. “30 fps” is encoded presentation cadence only: each frame holds a preceding acquired native PNG, with no interpolation. Host capture intervals and input receipts are not guest presentation, display, or physical-touch time.</p>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="geometry">
+  <header class="section-label"><h2 id="geometry">Rendered geometry</h2></header>
+  <div class="section-body">
+    <p>Bounds are inclusive rendered screenshot pixels, not source asset size or font point size; edge uncertainty is ±1 px unless noted.</p>
+    <table><thead><tr><th>primitive</th><th>measurement</th></tr></thead><tbody>
+      <tr><td>tile planes</td><td>large 210 × 210 px; small 99 × 99 px; 12 px gutters</td></tr>
+      <tr><td>icon/content landmarks</td><td>Rendered Phone [100,109,148,181] 49 × 73; Messaging [277,84,311,110] 35 × 27; IE [382,82,430,126] 49 × 45; Mail [278,202,311,228] 34 × 27; Calendar date/live content [107,653,226,700] 120 × 48; Kid’s Corner content [308,552,392,657] 85 × 106</td></tr>
+      <tr><td>labels/live text</td><td>Fake GSM Network [34,237,195,253] 162 × 17; People [34,460,87,477] 54 × 18; Sun 30 [116,653,225,700] 110 × 48; Kid’s Corner [256,682,351,699] 96 × 18</td></tr>
+      <tr><td>app list</td><td>search [25,57,67,98] = 43 × 42; header [86,57,147,118] = 62 × 62; Calculator icon [86,427,147,488] = 62 × 62; name [164,444,298,468] = 135 × 25, left x=164/top y=444; 74 px row pitch; 16 px icon/name gap; baseline y=468</td></tr>
+      <tr><td>alphabet grid</td><td>replacement settled-grid overlay [24,19,456,785] = 433 × 767; four columns; a [135,19,233,117] = 99 × 99 and b [246,19,344,117] = 99 × 99; 12 px gutter; enabled #3e65ff, disabled #202020</td></tr>
+      <tr><td>edit pose</td><td>Calendar [24,500,233,709]; unpin [228,456,272,500], center [250,478], diameter 45; resize [227,691,273,736], center [250,714], diameter 46; ±2 px</td></tr>
+    </tbody></table>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="evidence-code">
+  <header class="section-label"><h2 id="evidence-code">Evidence and code record</h2></header>
+  <div class="section-body"><p>Trace the exhaustive 23-ID matrix and limits through the <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/blob/start-screen-evidence-2026-08-30/research/start-screen/README.md">study protocol</a>, <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/blob/start-screen-evidence-2026-08-30/research/start-screen/measurements.json">measurements.json</a>, <a href="/wp_pivot_flutter/media/start-screen/media-index.json">media-index.json</a>, <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/tree/start-screen-evidence-2026-08-30/tools/launcher">launcher adapter record</a>, and <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/blob/start-screen-evidence-2026-08-30/research/start-screen/EVIDENCE-NOTICE.md">evidence notice</a>. The source/release inventory is available from the <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/releases/tag/start-screen-evidence-2026-08-30">release page</a> and the <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/releases/download/start-screen-evidence-2026-08-30/wp81-start-screen-evidence-2026-08-30.zip">direct archive</a>.</p></div>
+</section>
+
+<section class="manual-section" aria-labelledby="entry">
+  <header class="section-label"><h2 id="entry">Start entry, Calendar exit, and edit pose</h2></header>
+  <div class="section-body"><p>Observed entry/exit is staggered per-tile 3-D motion; exact easing and duration are unknown. Use “Play both” to launch the independent entry and exit records together. Calendar evidence ends on its recorded location prompt, not a claim about permissions.</p>
+    <figure class="comparison-evidence video-compare" data-video-compare="">
+      <div class="video-compare__grid">
+        <div class="video-compare__pane"><span class="compare-pane__label">Start entry</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/start-entry/poster.png"><source src="/wp_pivot_flutter/media/start-screen/start-entry/clip.mp4" type="video/mp4" />Start entry video unavailable; <a href="/wp_pivot_flutter/media/start-screen/start-entry/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Calculator → staggered entry → settled tiles. Corrected Home r03.</p></div>
+        <div class="video-compare__pane"><span class="compare-pane__label">Calendar exit</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/start-exit-calendar/poster.png"><source src="/wp_pivot_flutter/media/start-screen/start-exit-calendar/clip.mp4" type="video/mp4" />Calendar exit video unavailable; <a href="/wp_pivot_flutter/media/start-screen/start-exit-calendar/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Tile fly-off → recorded Calendar prompt. Source-mapped r03.</p></div>
+      </div>
+      <div class="compare-toolbar" role="group" aria-label="Start entry and Calendar exit playback"><button type="button" data-video-play="">Play both</button><button type="button" data-video-pause="">Pause both</button><button type="button" data-video-restart="">Restart both</button><span class="compare-status" data-video-status="" aria-live="polite">Ready · independent timelines</span></div>
+      <figcaption><strong>Opposite shell transitions</strong><span>Launched together; not time-aligned</span></figcaption>
+    </figure>
+    <figure class="media-evidence"><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/tile-edit/poster.png"><source src="/wp_pivot_flutter/media/start-screen/tile-edit/clip.mp4" type="video/mp4" />Edit pose video unavailable; <a href="/wp_pivot_flutter/media/start-screen/tile-edit/clip.mp4">download MP4</a>.</video><figcaption>Calendar lifted with circular unpin/resize affordances, then unchanged Start after Back. Source-mapped r03.</figcaption></figure>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="lateral">
+  <header class="section-label"><h2 id="lateral">Lateral surfaces and release outcomes</h2></header>
+  <div class="section-body"><p>During drag, Start and list surfaces share the viewport. Each pair launches together for direct visual comparison; the recordings keep their own durations. Release outcomes are observed commit or snap-back states, not a recovered curve.</p>
+    <h3>Drag and flick commits</h3>
+    <figure class="comparison-evidence video-compare" data-video-compare="">
+      <div class="video-compare__grid">
+        <div class="video-compare__pane"><span class="compare-pane__label">Drag commit</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/start-to-app-list-drag/poster.png"><source src="/wp_pivot_flutter/media/start-screen/start-to-app-list-drag/clip.mp4" type="video/mp4" />Drag video unavailable; <a href="/wp_pivot_flutter/media/start-screen/start-to-app-list-drag/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Start → shared split → app list. Source-mapped r03.</p></div>
+        <div class="video-compare__pane"><span class="compare-pane__label">Flick commit</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/start-to-app-list-flick/poster.png"><source src="/wp_pivot_flutter/media/start-screen/start-to-app-list-flick/clip.mp4" type="video/mp4" />Flick video unavailable; <a href="/wp_pivot_flutter/media/start-screen/start-to-app-list-flick/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Start flick → shared split → app list. Source-mapped r03.</p></div>
+      </div>
+      <div class="compare-toolbar" role="group" aria-label="Drag and flick commit playback"><button type="button" data-video-play="">Play both</button><button type="button" data-video-pause="">Pause both</button><button type="button" data-video-restart="">Restart both</button><span class="compare-status" data-video-status="" aria-live="polite">Ready · independent timelines</span></div>
+      <figcaption><strong>Start → app list commits</strong><span>Long drag beside quick flick</span></figcaption>
+    </figure>
+
+    <h3>Snap-back direction</h3>
+    <figure class="comparison-evidence video-compare" data-video-compare="">
+      <div class="video-compare__grid">
+        <div class="video-compare__pane"><span class="compare-pane__label">Back to Start</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/start-to-app-list-cancel/poster.png"><source src="/wp_pivot_flutter/media/start-screen/start-to-app-list-cancel/clip.mp4" type="video/mp4" />Cancel video unavailable; <a href="/wp_pivot_flutter/media/start-screen/start-to-app-list-cancel/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">List edge exposed, then Start restored. Source-mapped r03.</p></div>
+        <div class="video-compare__pane"><span class="compare-pane__label">Back to app list</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/app-list-to-start-cancel/poster.png"><source src="/wp_pivot_flutter/media/start-screen/app-list-to-start-cancel/clip.mp4" type="video/mp4" />Inverse cancel video unavailable; <a href="/wp_pivot_flutter/media/start-screen/app-list-to-start-cancel/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Start exposed, then app list restored. Source-mapped r03.</p></div>
+      </div>
+      <div class="compare-toolbar" role="group" aria-label="Opposite snap-back playback"><button type="button" data-video-play="">Play both</button><button type="button" data-video-pause="">Pause both</button><button type="button" data-video-restart="">Restart both</button><span class="compare-status" data-video-status="" aria-live="polite">Ready · independent timelines</span></div>
+      <figcaption><strong>Sub-threshold release</strong><span>Opposite starting surfaces and return states</span></figcaption>
+    </figure>
+
+    <h3>Inverse commit and failed flick</h3>
+    <figure class="comparison-evidence video-compare" data-video-compare="">
+      <div class="video-compare__grid">
+        <div class="video-compare__pane"><span class="compare-pane__label">Drag commits</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/app-list-to-start-drag/poster.png"><source src="/wp_pivot_flutter/media/start-screen/app-list-to-start-drag/clip.mp4" type="video/mp4" />Inverse drag video unavailable; <a href="/wp_pivot_flutter/media/start-screen/app-list-to-start-drag/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">App list → shared split → Start. Source-mapped r03.</p></div>
+        <div class="video-compare__pane"><span class="compare-pane__label">Flick snaps back</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/inverse-flick-snap-back/poster.png"><source src="/wp_pivot_flutter/media/start-screen/inverse-flick-snap-back/clip.mp4" type="video/mp4" />Rejected flick video unavailable; <a href="/wp_pivot_flutter/media/start-screen/inverse-flick-snap-back/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Requested inverse flick failed to commit; app list restored. Source-mapped r03.</p></div>
+      </div>
+      <div class="compare-toolbar" role="group" aria-label="Inverse drag and failed flick playback"><button type="button" data-video-play="">Play both</button><button type="button" data-video-pause="">Pause both</button><button type="button" data-video-restart="">Restart both</button><span class="compare-status" data-video-status="" aria-live="polite">Ready · independent timelines</span></div>
+      <figcaption><strong>App list → Start attempt</strong><span>Observed commit beside observed snap-back</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="scroll">
+  <header class="section-label"><h2 id="scroll">Vertical scrolling and boundaries</h2></header>
+  <div class="section-body"><p>These pairs show observed content displacement and boundary return. “Play both” makes differences easier to inspect without asserting clock alignment. A timing-qualified coarse gate does not establish physical latency or a native easing equation.</p>
+    <h3>Start: slow scroll and flick</h3>
+    <figure class="comparison-evidence video-compare" data-video-compare="">
+      <div class="video-compare__grid">
+        <div class="video-compare__pane"><span class="compare-pane__label">Slow scroll</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/start-scroll-slow/poster.png"><source src="/wp_pivot_flutter/media/start-screen/start-scroll-slow/clip.mp4" type="video/mp4" />Start slow-scroll video unavailable; <a href="/wp_pivot_flutter/media/start-screen/start-scroll-slow/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Start moves to lower tile and Photos content. Source-mapped r03.</p></div>
+        <div class="video-compare__pane"><span class="compare-pane__label">Flick scroll</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/start-scroll-flick/poster.png"><source src="/wp_pivot_flutter/media/start-screen/start-scroll-flick/clip.mp4" type="video/mp4" />Start flick-scroll video unavailable; <a href="/wp_pivot_flutter/media/start-screen/start-scroll-flick/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Start flicks to lower content. Source-mapped r03.</p></div>
+      </div>
+      <div class="compare-toolbar" role="group" aria-label="Start slow and flick scroll playback"><button type="button" data-video-play="">Play both</button><button type="button" data-video-pause="">Pause both</button><button type="button" data-video-restart="">Restart both</button><span class="compare-status" data-video-status="" aria-live="polite">Ready · independent timelines</span></div>
+      <figcaption><strong>Start vertical displacement</strong><span>Slow delivery beside flick delivery</span></figcaption>
+    </figure>
+
+    <h3>App list: slow scroll and flick</h3>
+    <figure class="comparison-evidence video-compare" data-video-compare="">
+      <div class="video-compare__grid">
+        <div class="video-compare__pane"><span class="compare-pane__label">Slow scroll</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/app-list-scroll-slow/poster.png"><source src="/wp_pivot_flutter/media/start-screen/app-list-scroll-slow/clip.mp4" type="video/mp4" />List slow-scroll video unavailable; <a href="/wp_pivot_flutter/media/start-screen/app-list-scroll-slow/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">A rows move to lower rows. Source-mapped r03.</p></div>
+        <div class="video-compare__pane"><span class="compare-pane__label">Flick scroll</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/app-list-scroll-flick/poster.png"><source src="/wp_pivot_flutter/media/start-screen/app-list-scroll-flick/clip.mp4" type="video/mp4" />List flick-scroll video unavailable; <a href="/wp_pivot_flutter/media/start-screen/app-list-scroll-flick/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">A rows flick to lower rows. Source-mapped r03.</p></div>
+      </div>
+      <div class="compare-toolbar" role="group" aria-label="App-list slow and flick scroll playback"><button type="button" data-video-play="">Play both</button><button type="button" data-video-pause="">Pause both</button><button type="button" data-video-restart="">Restart both</button><span class="compare-status" data-video-status="" aria-live="polite">Ready · independent timelines</span></div>
+      <figcaption><strong>App-list vertical displacement</strong><span>Slow delivery beside flick delivery</span></figcaption>
+    </figure>
+
+    <h3>Top-boundary return</h3>
+    <figure class="comparison-evidence video-compare" data-video-compare="">
+      <div class="video-compare__grid">
+        <div class="video-compare__pane"><span class="compare-pane__label">Start boundary</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/start-overscroll/poster.png"><source src="/wp_pivot_flutter/media/start-screen/start-overscroll/clip.mp4" type="video/mp4" />Start overscroll video unavailable; <a href="/wp_pivot_flutter/media/start-screen/start-overscroll/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Tile grid pulled down, then restored. Source-mapped r03.</p></div>
+        <div class="video-compare__pane"><span class="compare-pane__label">App-list boundary</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/app-list-overscroll/poster.png"><source src="/wp_pivot_flutter/media/start-screen/app-list-overscroll/clip.mp4" type="video/mp4" />List overscroll video unavailable; <a href="/wp_pivot_flutter/media/start-screen/app-list-overscroll/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">List pulled down, then restored. Source-mapped r03.</p></div>
+      </div>
+      <div class="compare-toolbar" role="group" aria-label="Start and app-list overscroll playback"><button type="button" data-video-play="">Play both</button><button type="button" data-video-pause="">Pause both</button><button type="button" data-video-restart="">Restart both</button><span class="compare-status" data-video-status="" aria-live="polite">Ready · independent timelines</span></div>
+      <figcaption><strong>Recoverable top boundary</strong><span>Tile surface beside list surface</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="alphabet">
+  <header class="section-label"><h2 id="alphabet">Alphabet grid and app launch</h2></header>
+  <div class="section-body"><p>The corrected cancel session waits for list settle before the header tap. Old no-settle cancel trials remain rejected supplemental evidence because they launched Calculator.</p>
+    <figure class="media-evidence"><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/alphabet-open/poster.png"><source src="/wp_pivot_flutter/media/start-screen/alphabet-open/clip.mp4" type="video/mp4" />Alphabet-open video unavailable; <a href="/wp_pivot_flutter/media/start-screen/alphabet-open/clip.mp4">download MP4</a>.</video><figcaption>App list → alphabet overlay expansion → grid. Source-mapped r01.</figcaption></figure>
+    <h3>Selection and cancellation</h3>
+    <figure class="comparison-evidence">
+      <div class="image-compare" data-image-compare="" style="--compare-position: 50%;" role="group" aria-label="Alphabet selection and cancellation transition-frame comparison">
+        <div class="image-compare__stage">
+          <img class="image-compare__after" src="/wp_pivot_flutter/media/start-screen/alphabet-cancel/poster.png" alt="Alphabet grid folding away during Back cancellation" />
+          <div class="image-compare__before"><img src="/wp_pivot_flutter/media/start-screen/alphabet-select/poster.png" alt="Enabled b-cell and alphabet grid contracting during selection" /></div>
+          <span class="image-compare__label image-compare__label--before">Select B</span>
+          <span class="image-compare__label image-compare__label--after">Cancel</span>
+          <span class="image-compare__divider" aria-hidden="true"></span>
+        </div>
+        <label class="sr-only" for="alphabet-outcome-reveal">Reveal more of the alphabet selection or cancellation transition frame</label>
+        <div class="image-compare__control"><span aria-hidden="true">Select B</span><input id="alphabet-outcome-reveal" data-image-compare-input="" data-first-label="Select B" data-second-label="Cancel" type="range" min="0" max="100" value="50" /><span aria-hidden="true">Cancel</span></div>
+      </div>
+      <figcaption><strong>Source-mapped transition frames</strong><span>Selection r03 reveal · corrected cancellation r03 reveal</span></figcaption>
+    </figure>
+    <figure class="comparison-evidence video-compare" data-video-compare="">
+      <div class="video-compare__grid">
+        <div class="video-compare__pane"><span class="compare-pane__label">Select B</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/alphabet-select/poster.png"><source src="/wp_pivot_flutter/media/start-screen/alphabet-select/clip.mp4" type="video/mp4" />Alphabet-select video unavailable; <a href="/wp_pivot_flutter/media/start-screen/alphabet-select/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Settled grid → enabled b cell → B section. Corrected r03; behavior/geometry only.</p></div>
+        <div class="video-compare__pane"><span class="compare-pane__label">Back cancel</span><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/alphabet-cancel/poster.png"><source src="/wp_pivot_flutter/media/start-screen/alphabet-cancel/clip.mp4" type="video/mp4" />Alphabet-cancel video unavailable; <a href="/wp_pivot_flutter/media/start-screen/alphabet-cancel/clip.mp4">download MP4</a>.</video><p class="compare-pane__note">Settled grid → Back dismissal → app list restored. Corrected r03.</p></div>
+      </div>
+      <div class="compare-toolbar" role="group" aria-label="Alphabet selection and cancellation playback"><button type="button" data-video-play="">Play both</button><button type="button" data-video-pause="">Pause both</button><button type="button" data-video-restart="">Restart both</button><span class="compare-status" data-video-status="" aria-live="polite">Ready · independent timelines</span></div>
+      <figcaption><strong>Alphabet-grid outcome</strong><span>The 141.19 ms selection gap excludes timing comparison</span></figcaption>
+    </figure>
+    <figure class="media-evidence"><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/app-list-launch/poster.png"><source src="/wp_pivot_flutter/media/start-screen/app-list-launch/clip.mp4" type="video/mp4" />Calculator launch video unavailable; <a href="/wp_pivot_flutter/media/start-screen/app-list-launch/clip.mp4">download MP4</a>.</video><figcaption>Calculator row → launch splash → keypad surface. Source-mapped r01.</figcaption></figure>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="live">
+  <header class="section-label"><h2 id="live">People live-tile flip</h2></header>
+  <div class="section-body"><p>This is passive native content-plane evidence, not a reconstructed shell animation. The repeat group supports behavior/geometry; its timing gate is not eligible.</p>
+    <figure class="media-evidence"><video controls="" playsinline="" preload="metadata" width="480" height="800" poster="/wp_pivot_flutter/media/start-screen/live-tile-flip/poster.png"><source src="/wp_pivot_flutter/media/start-screen/live-tile-flip/clip.mp4" type="video/mp4" />Live-tile flip video unavailable; <a href="/wp_pivot_flutter/media/start-screen/live-tile-flip/clip.mp4">download MP4</a>.</video><figcaption>People content plane splits/flips, then reaches its updated rendered state. Source-mapped r01.</figcaption></figure>
+  </div>
+</section>
+
+<section class="manual-section" aria-labelledby="limits">
+  <header class="section-label"><h2 id="limits">Boundaries and candidate implications</h2></header>
+  <div class="section-body"><p>No Lumia/hardware, Android-launcher, overall-fidelity, exact-font/point-size, exact-easing, or physical-latency claim follows from this emulator record. Continuous reverse-while-held is unsupported by the bridge. Microsoft-origin emulator UI is attributed evidence only, not package assets or trademark affiliation; no proprietary Segoe binary or standalone Windows artwork is redistributed.</p><p>Candidate primitives for later evaluation are a tile surface/content plane, semantic alphabet grid, app-list row, scroll/overscroll behavior, and transition orchestration. API/component selection is deferred until after research review.</p></div>
+</section>
+</main>
+  <footer class="site-footer">
+    <div class="shell">
+      <span>WP Pivot Research · evidence before claims</span>
+      <span><a href="https://github.com/Chinmay-KB/wp_pivot_flutter">GitHub</a> · <a href="https://github.com/Chinmay-KB/wp_pivot_flutter/blob/master/docs/ROADMAP.md">Roadmap</a></span>
+    </div>
+  </footer>
+</body>
+</html>
